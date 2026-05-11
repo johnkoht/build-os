@@ -48,6 +48,25 @@ else
   echo "✓ collaboration.md exists (personal preferences preserved)"
 fi
 
+# new-project CLI → ~/.local/bin/new-project
+chmod +x "$REPO/bin/new-project"
+LOCAL_BIN="$HOME/.local/bin"
+mkdir -p "$LOCAL_BIN"
+if [ -L "$LOCAL_BIN/new-project" ] && [ "$(readlink "$LOCAL_BIN/new-project")" = "$REPO/bin/new-project" ]; then
+  echo "✓ new-project CLI already linked"
+else
+  ln -sf "$REPO/bin/new-project" "$LOCAL_BIN/new-project"
+  echo "✓ linked new-project → ~/.local/bin/new-project"
+fi
+
+# Ensure ~/.local/bin is on PATH
+if [[ ":$PATH:" != *":$LOCAL_BIN:"* ]]; then
+  echo ""
+  echo "⚠️  ~/.local/bin is not on your PATH."
+  echo "   Add this to your ~/.zshrc or ~/.bashrc:"
+  echo '   export PATH="$HOME/.local/bin:$PATH"'
+fi
+
 echo ""
-echo "Done. Slash commands available: /ship /build /hotfix /review /pre-mortem /plan-to-prd /post-mortem /wrap"
-echo "To set up a new project: copy templates/project-claude.md to your project as CLAUDE.md"
+echo "Slash commands: /ship /build /hotfix /review /pre-mortem /plan-to-prd /post-mortem /wrap /new-project"
+echo "CLI command:    new-project <name> [--lang typescript|ruby|python|go]"

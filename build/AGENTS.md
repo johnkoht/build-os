@@ -22,11 +22,14 @@
 |isolation_gate:NEVER switch branches in the main repo — ask builder "here or worktree?" before any code changes
 |one_task_one_subagent:Use subagents liberally for research/exploration/parallel work. Keep each focused on a single task.
 
-[Roles]|behavioral definitions for subagent personas — `~/.claude/build/agents/{role}.md`
+[Roles]|behavioral definitions for subagent personas
+|global:~/.claude/build/agents/{role}.md — available in every project
+|project:project-local .build/agents/{role}.md — custom personas for this project (declare in project CLAUDE.md)
 |orchestrator:Sr. Eng Manager — owns PRD execution, task breakdown, context assembly, holistic review
 |reviewer:Sr. Engineer — code review, AC verification, quality gates
 |developer:Task executor — implements one task from PRD
 |gitboss:Git gatekeeper — pre-merge verification, diff review, versioning decisions
+|product-manager:PM — problem shaping, plan creation, PRD ownership, scope decisions
 
 [Expertise]|domain knowledge for subagents — project-local `.build/expertise/{domain}/PROFILE.md`
 |purpose:Expertise profiles provide architecture maps, component relationships, invariants, anti-patterns, and required reading for subagents
@@ -56,7 +59,8 @@
 |layer_4:Domain expertise — project-local .build/expertise/{domain}/PROFILE.md (when available)
 
 [Project Structure]|standard layout expected by build skills
-|plans:dev/work/plans/{slug}/plan.md, prd.md, prd.json, pre-mortem.md, review.md
-|executions:dev/executions/{slug}/status.json, progress.md, working-memory.md
-|memory:memory/MEMORY.md, memory/entries/, memory/collaboration.md (optional project-level)
+|plans:plans/{slug}/ — plan.md, prd.md, prd.json, pre-mortem.md, review.md, working-memory.md, build-log.md
+|memory:memory/MEMORY.md, memory/entries/ — project memory index and entries
 |learnings:LEARNINGS.md files co-located with the code they document
+|expertise:project-local .build/expertise/{domain}/PROFILE.md — domain knowledge for Layer 4
+|agents_local:project-local .build/agents/{name}.md — project-specific agent personas

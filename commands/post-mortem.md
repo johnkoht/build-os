@@ -1,17 +1,17 @@
 ---
 name: post-mortem
-description: Structured reflection after PRD completion. Extracts learnings, creates memory entry, synthesizes collaboration profile.
+description: Structured reflection after PRD completion. Extracts learnings, creates memory entry, synthesizes collaboration patterns.
 ---
 
 # Post-Mortem
 
-Systematic reflection after completing a PRD or significant piece of work. Creates a memory entry, updates LEARNINGS.md, and synthesizes patterns.
+Systematic reflection after completing a PRD or significant piece of work.
 
 ## When to Use
 
 - After a PRD is complete (called automatically by /build at close-out)
 - After a hotfix that revealed significant patterns
-- When explicitly requested: "Create the post-mortem"
+- Explicitly: "Create the post-mortem" or "Extract learnings"
 
 ---
 
@@ -20,30 +20,26 @@ Systematic reflection after completing a PRD or significant piece of work. Creat
 ### 1. Gather Materials
 
 Read:
-- `dev/work/plans/{slug}/prd.md` — original goals and ACs
-- `dev/executions/{slug}/progress.md` — task-by-task log
-- `dev/executions/{slug}/prd.json` — final status, attempt counts
-- `dev/work/plans/{slug}/pre-mortem.md` — if exists, for risk retrospective
-- Developer completion reports from progress.md
+- `plans/{slug}/prd.md` — original goals and ACs
+- `plans/{slug}/prd.json` — final status, attempt counts
+- `plans/{slug}/working-memory.md` — cross-task discoveries
+- `plans/{slug}/pre-mortem.md` — if exists, for risk retrospective
+- Developer completion signals from working-memory.md
 
 ### 2. Pre-Mortem Retrospective
-
-For each risk in the pre-mortem (if one exists):
 
 | Risk | Materialized? | Mitigation Applied? | Effective? |
 |------|---------------|---------------------|------------|
 
 **Surprises** (not in pre-mortem):
 - Positive: What went better than expected?
-- Negative: What issues arose that weren't anticipated?
+- Negative: What issues arose unexpectedly?
 
 ### 3. Extract Learnings
 
-Synthesize:
-- **What worked well** — patterns and approaches to repeat
-- **What didn't work** — patterns to avoid or change
-- **Collaboration patterns** — how did the builder engage? what did they prefer?
-- **Context assembly quality** — did subagents have what they needed? what was missing?
+- **What worked** — patterns to repeat
+- **What didn't** — patterns to avoid
+- **Context assembly quality** — did subagents have what they needed?
 - **Reuse vs reimplementation** — were existing abstractions used effectively?
 
 ### 4. Create Memory Entry
@@ -54,84 +50,64 @@ Create `memory/entries/YYYY-MM-DD_{slug}-learnings.md`:
 # {slug} — Post-Mortem
 
 Date: {date}
-PRD: dev/work/plans/{slug}/prd.md
 
 ## Metrics
 
-- Tasks: N total, N complete, N iterations required
-- First-attempt success rate: N%
+- Tasks: N total, N complete, N iterations
+- First-attempt success: N%
 - Tests added: N
-- Duration: approximately N hours
 
 ## Pre-Mortem Effectiveness
 
 | Risk | Materialized | Mitigation Effective |
 |------|-------------|---------------------|
-| [risk] | Yes/No | Yes/No/Partial/N/A |
 
-## What Worked
+## What Worked / Didn't
 
-- [+] [Pattern or approach that worked well]
-- [+] [Another win]
-
-## What Didn't Work
-
-- [-] [Pattern or approach that caused friction]
-- [-] [Another issue]
+- [+] [Pattern that worked]
+- [-] [Pattern that caused friction]
 
 ## Surprises
 
-- [Positive: something that went better than expected]
-- [Negative: something unexpected that came up]
+- [Positive or negative surprise]
 
 ## Recommendations
 
-**Continue**: [patterns to keep doing]
-**Stop**: [patterns to change or drop]
-**Start**: [new practices to adopt]
+**Continue**: [patterns to keep]
+**Stop**: [patterns to drop]
+**Start**: [new practices]
 
 ## Follow-ups
 
-- [ ] [Refactor item: dev/work/plans/refactor-X/plan.md]
-- [ ] [Doc gap: update X]
-- [ ] [Other action item]
+- [ ] [Refactor item: plans/refactor-X/plan.md]
+- [ ] [Doc gap]
 ```
 
-Add index line to `memory/MEMORY.md`:
+Add to `memory/MEMORY.md`:
 ```
 - [YYYY-MM-DD] [{slug}](entries/YYYY-MM-DD_{slug}-learnings.md) — [one-line summary]
 ```
 
 ### 5. Update LEARNINGS.md
 
-Based on progress.md and developer signals:
-- Were regressions fixed? → LEARNINGS.md entry in affected directory
-- First-use patterns discovered? → LEARNINGS.md entry
-- Non-obvious design decisions made? → LEARNINGS.md entry
+Based on working-memory.md and developer signals:
+- Regressions fixed → LEARNINGS.md in affected directory
+- First-use patterns → LEARNINGS.md entry
+- Non-obvious decisions → LEARNINGS.md entry
 
-If none: verify and note "No new learnings — verified (reasons: [list])".
+If none: verify and note "No new learnings — verified".
 
-### 6. Check Collaboration Profile
-
-If 5+ new learnings about builder preferences were captured, consider updating `~/.claude/build/memory/collaboration.md`:
-- New preferences confirmed
-- Corrections made
-- Patterns in how builder prefers to engage
-
-### 7. Report
+### 6. Report
 
 ```markdown
 ## Post-Mortem: {slug}
 
-**Memory entry**: memory/entries/YYYY-MM-DD_{slug}-learnings.md ✅
-**LEARNINGS.md**: [N files updated / none needed — reason]
-**Collaboration profile**: [updated / no changes]
+**Memory entry**: ✅ created
+**LEARNINGS.md**: [N files updated / none needed]
 
 ## Key Takeaways
-
 1. [Most important learning]
-2. [Second most important]
-3. [Third]
+2. [Second]
 
 ## Recommendations
 - **Continue**: [top 2-3]

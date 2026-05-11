@@ -17,35 +17,28 @@ Automate the complete build workflow from approved plan to merged code. Say `/sh
 
 ## Prerequisites
 
-- Plan exists at `dev/work/plans/{slug}/plan.md` with `status: approved`
-- Git worktrees available (`git worktree` command)
+- Plan at `plans/{slug}/plan.md` with `status: approved` (or plan is in conversation)
 
 ---
 
-## Worktree Guard (MANDATORY)
-
-Planning phases may run from the main repo. Code execution MUST run from a worktree.
-
-Before Phase 4.1, verify:
+## Worktree Guard (MANDATORY before Phase 4.1)
 
 ```bash
 git_dir=$(git rev-parse --git-dir 2>/dev/null)
 if [[ "$git_dir" == ".git" ]]; then
-  echo "❌ You're in the main repo. Code execution blocked."
-  echo "   Complete Phase 3.1 (create worktree) first."
+  echo "❌ In main repo. Create worktree first (Phase 3.1)."
   exit 1
 fi
-branch=$(git branch --show-current)
-echo "✅ Worktree confirmed | Branch: $branch"
+echo "✅ Worktree: $(git branch --show-current)"
 ```
 
 ---
 
-## Pre-Flight Check (MANDATORY)
+## Pre-Flight Check
 
-Read `dev/work/plans/{slug}/plan.md` frontmatter:
-- `status: idea` or `draft` → **HALT**: "Approve the plan first."
-- `status: planned` or `approved` → proceed
+Read plan frontmatter:
+- `status: idea/draft` → **HALT**: "Approve the plan first."
+- `status: planned/approved` → proceed
 - `has_pre_mortem: true` → skip Phase 1.2
 - `has_review: true` → skip Phase 1.3
 - `has_prd: true` → skip Phase 2.2
@@ -55,80 +48,80 @@ Read `dev/work/plans/{slug}/plan.md` frontmatter:
 ## Workflow
 
 ```
-[PHASE 0] Initialize Build Log
+[PHASE 0] Initialize Build Log         → plans/{slug}/build-log.md
 [PHASE 1] Pre-Build (main branch)
   1.1 Save Plan
-  1.2 Run Pre-Mortem              → GATE: CRITICAL risks
-  1.3 Run Cross-Model Review      → GATE: Structural blockers
+  1.2 Run Pre-Mortem                   → GATE: CRITICAL risks
+  1.3 Run Cross-Model Review           → GATE: Structural blockers
 [PHASE 2] Memory & PRD (main branch)
   2.1 Memory Review
-  2.2 Convert to PRD
+  2.2 Convert to PRD                   → /plan-to-prd
   2.3 Commit Artifacts
 [PHASE 3] Worktree Setup
   3.1 Create Worktree
   3.2 Switch to Worktree
 [PHASE 4] Build (worktree branch)
-  4.1 Execute PRD                 → GATE: Task failures
-  4.2 Final Review                → GATE: Major rework needed
-[PHASE 5] Wrap & Report (worktree branch)
+  4.1 Execute PRD                      → GATE: Task failures
+  4.2 Final Review                     → GATE: Major rework needed
+[PHASE 5] Wrap & Report
   5.1 Create Memory Entry
   5.2 Update LEARNINGS.md
   5.3 Commit Implementation
   5.4 Verify with /wrap
   5.5 Generate Ship Report
-  5.6 Merge Gate (via Gitboss)    → INTERACTIVE
-[PHASE 6] Cleanup (after merge)
+  5.6 Merge Gate (via Gitboss)         → INTERACTIVE
+[PHASE 6] Cleanup
   6.1 Remove Worktree & Branch
 ```
 
 ---
 
-## Phase 0: Initialize Build Log
+## Phase 0: Build Log
 
-1. Check for `dev/executions/{slug}/build-log.md`
-2. **No file** → create it with: slug, timestamp, phase tracker
-3. **Exists, incomplete** → append session marker, resume from last phase
-4. **Exists, COMPLETE** → confirm re-run before proceeding
+Check for `plans/{slug}/build-log.md`:
+- **No file** → create with slug + timestamp
+- **Exists, incomplete** → append session marker, resume
+- **Exists, COMPLETE** → confirm re-run before proceeding
 
-Update build-log at every phase start and complete.
+Update at every phase start and complete.
 
 ---
 
-## Phase 1: Pre-Build (main branch)
+## Phase 1: Pre-Build
 
 ### 1.1 Save Plan
-If plan is only in conversation, save it to `dev/work/plans/{slug}/plan.md`. Derive slug from plan title (kebab-case).
+If plan is only in conversation, save to `plans/{slug}/plan.md` (slug = kebab-case of title).
 
-### 1.2 Run Pre-Mortem
-Load `/pre-mortem` against `dev/work/plans/{slug}/plan.md`. Save output to `pre-mortem.md`.
+### 1.2 Pre-Mortem
+Run `/pre-mortem` against `plans/{slug}/plan.md`. Save to `plans/{slug}/pre-mortem.md`.
 
-**Gate:**
 | Condition | Action |
 |-----------|--------|
-| No CRITICAL risks | → Proceed to 1.3 |
-| Any CRITICAL risk | → **PAUSE**: report to builder |
+| No CRITICAL risks | → Proceed |
+| Any CRITICAL risk | → **PAUSE** |
 
-### 1.3 Run Cross-Model Review
-Load `/review` against plan + pre-mortem. Save output to `review.md`.
+### 1.3 Cross-Model Review
+Run `/review` against plan + pre-mortem. Save to `plans/{slug}/review.md`.
 
-**Gate:**
 | Condition | Action |
 |-----------|--------|
-| No structural blockers | → Proceed to 2.1 |
-| Structural blockers | → **PAUSE**: report to builder |
+| No structural blockers | → Proceed |
+| Structural blockers | → **PAUSE** |
 
 ---
 
 ## Phase 2: Memory & PRD
 
 ### 2.1 Memory Review
-Search `memory/entries/` for entries from last 14 days and entries matching plan keywords. Check LEARNINGS.md in directories the plan touches. Check `~/.claude/build/memory/collaboration.md` for personal preferences. Synthesize into 3-5 actionable bullets.
+Search `memory/entries/` (last 14 days + plan keywords). Check `~/.claude/build/memory/collaboration.md`. Synthesize 3-5 actionable bullets for the PRD prompt.
 
 ### 2.2 Convert to PRD
-Load `/plan-to-prd` with memory synthesis from 2.1 in the task prompt. Generates both `prd.md` and `prd.json`. Validate prd.json has: name, branchName, tasks array with all required fields.
+Run `/plan-to-prd` with memory synthesis. Validates prd.json has name, branchName, tasks array.
 
 ### 2.3 Commit Artifacts
-Stage and commit plan.md, pre-mortem.md, review.md, prd.md, prd.json. Message: `plan: {slug} - artifacts`.
+```bash
+git add plans/{slug}/ && git commit -m "plan: {slug} - artifacts"
+```
 
 ---
 
@@ -139,83 +132,66 @@ Stage and commit plan.md, pre-mortem.md, review.md, prd.md, prd.json. Message: `
 git worktree add ../{repo}-worktrees/{slug} -b feature/{slug}
 ```
 
-### 3.2 Switch to Worktree
-Change CWD to the worktree. Verify: `.git` is a file (not directory), branch is `feature/{slug}`.
+### 3.2 Switch
+Change CWD to worktree. Verify `.git` is a file (not directory), branch is `feature/{slug}`.
 
 ---
 
-## Phase 4: Build (worktree)
+## Phase 4: Build
 
 ### 4.1 Execute PRD
-Load `/build` skill. Pass PRD at `dev/work/plans/{slug}/prd.md` and execution state at `dev/executions/{slug}/`. The skill handles task dispatch, reviewer checks, quality gates, and progress tracking.
+Run `/build` with PRD at `plans/{slug}/prd.md`.
 
-**Gate:**
 | Condition | Action |
 |-----------|--------|
-| All tasks pass quality gates | → Proceed to 4.2 |
-| Task fails quality gates (2 attempts) | → **PAUSE**: report task, error, options |
+| All tasks pass | → Proceed |
+| Task fails (2 attempts) | → **PAUSE** |
 
 ### 4.2 Final Review
-Dispatch orchestrator subagent for holistic review: Does implementation match PRD intent? All ACs met? Code quality adequate?
+Dispatch orchestrator: Does implementation match PRD intent? All ACs met?
 
-**Gate:**
 | Condition | Action |
 |-----------|--------|
-| READY | → Proceed to Phase 5 |
-| NEEDS_REWORK | → **PAUSE**: report issues, offer fix/override/abort |
+| READY | → Proceed |
+| NEEDS_REWORK | → **PAUSE** |
 
 ---
 
 ## Phase 5: Wrap & Report
 
-### 5.1 Create Memory Entry
-Synthesize `memory/entries/YYYY-MM-DD_{slug}-learnings.md` with 5 sections:
-1. Metrics (tasks, success rate, iterations, tests added)
-2. Pre-mortem effectiveness (risk table)
-3. What worked / what didn't (+/- format)
-4. Recommendations (continue/stop/start)
-5. Follow-ups (refactor items, doc gaps)
+### 5.1 Memory Entry
+Create `memory/entries/YYYY-MM-DD_{slug}-learnings.md`. Add index to `memory/MEMORY.md`.
 
-Add index line to `memory/MEMORY.md`.
+### 5.2 LEARNINGS.md
+Review completion reports for regressions, first-use patterns, non-obvious decisions. Update relevant files.
 
-### 5.2 Update LEARNINGS.md
-Review `dev/executions/{slug}/progress.md` for regressions, first-use patterns, non-obvious decisions. Update relevant LEARNINGS.md files. If genuinely none, verify and note "No new learnings — verified".
+### 5.3 Commit
+```bash
+git add -p && git commit -m "feat: {slug} - implementation"
+```
 
-### 5.3 Commit Implementation
-Stage all implementation files, memory entry, LEARNINGS.md updates. Message: `feat: {slug} - implementation`.
+### 5.4 /wrap
+Run `/wrap`. Warnings → note and proceed. Failures → fix first.
 
-### 5.4 Verify with /wrap
-Run `/wrap`. Warnings (⚠️) → note in report, proceed. Failures (✗) → fix before proceeding.
-
-### 5.5 Generate Ship Report
+### 5.5 Ship Report
 ```markdown
 # Ship Complete: {slug}
 
-| Metric | Value |
-|--------|-------|
-| Phases Completed | 5/5 |
-| Tasks Executed | N/N |
-| Quality Gates | ✓ All passed |
-| Gate Pauses | N |
-| Commits | N |
-
-## Next Steps
-1. Review changes in worktree
-2. Create PR or merge directly
+| Tasks | Quality Gates | Iterations | Commits |
+|-------|--------------|------------|---------|
+| N/N   | ✓ All passed | N          | N       |
 ```
 
 ### 5.6 Merge Gate
-Dispatch gitboss for: pre-merge checks → diff review → builder prompt (M/R/L) → merge with --no-ff → version decision.
+Dispatch gitboss for: pre-merge checks → diff review → builder prompt → merge → version decision.
 
 ---
 
 ## Phase 6: Cleanup
 
-After successful merge:
 ```bash
 git worktree remove ../{repo}-worktrees/{slug}
 git branch -D feature/{slug}
-git push origin --delete feature/{slug}  # if pushed
 ```
 
 ---
@@ -224,9 +200,9 @@ git push origin --delete feature/{slug}  # if pushed
 
 | Phase | Failure | Recovery |
 |-------|---------|----------|
-| 1.2 | Gate PAUSE (CRITICAL risk) | Address risk → `/ship resume` |
-| 1.3 | Gate PAUSE (blockers) | Address blockers → `/ship resume` |
-| 2.2 | PRD creation fails | Run `/plan-to-prd` manually |
-| 4.1 | Task fails quality gates | Resume via `/build` |
+| 1.2 | CRITICAL risk | Address → `/ship resume` |
+| 1.3 | Blockers | Address → `/ship resume` |
+| 2.2 | PRD fails | Run `/plan-to-prd` manually |
+| 4.1 | Task fails | Resume via `/build` |
 | 5.6 | Merge conflicts | Resolve or create PR |
-| Any | Stall | Re-run `/ship {slug}` — build-log detects state, resumes |
+| Any stall | Re-run `/ship {slug}` — build-log detects state |

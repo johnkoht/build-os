@@ -11,30 +11,27 @@ Autonomously execute a PRD by dispatching subagents for each task, with two dist
 
 ## Prerequisites
 
-- PRD exists at `dev/work/plans/{slug}/prd.md`
-- Task list exists at `dev/work/plans/{slug}/prd.json`
+- PRD exists at `plans/{slug}/prd.md`
+- Task list exists at `plans/{slug}/prd.json`
 - Working branch created (worktree recommended)
 
 ---
 
-## Phase 0: Orient & Understand the PRD
+## Phase 0: Orient & Understand
 
 **Read these first (MANDATORY)**:
-1. `~/.claude/build/AGENTS.md` — skills index, conventions
+1. `~/.claude/build/AGENTS.md` — skills index, agent roles
 2. `memory/MEMORY.md` — recent decisions and learnings
 3. `~/.claude/build/memory/collaboration.md` — personal preferences
-4. LEARNINGS.md in directories the PRD touches
-
-**Then read the PRD**:
-- `dev/work/plans/{slug}/prd.md` — problem statement, goal, tasks
-- `dev/work/plans/{slug}/prd.json` — structured task list with dependencies
+4. `plans/{slug}/plan.md` — original plan
+5. `plans/{slug}/prd.md` — problem statement, goal, tasks
+6. `plans/{slug}/prd.json` — structured task list with dependencies
+7. LEARNINGS.md in directories the PRD touches
 
 **Recon Check (MANDATORY)**: For each task, verify it's not already done:
-```bash
-# Check if proposed output files exist
-# Grep for proposed function/class names
-# Verify ACs are not already met
-```
+- Check if proposed output files already exist
+- Grep for proposed function/class names
+- Verify ACs aren't already met by existing code
 
 Output a recon report:
 ```markdown
@@ -43,29 +40,24 @@ Output a recon report:
 |------|--------|----------|
 | task-1 | PHANTOM | already implemented at src/auth.ts:47 |
 | task-2 | CONFIRMED | no existing implementation |
-| task-3 | PARTIAL | exists but missing --flag option |
+| task-3 | PARTIAL | exists but missing one feature |
 ```
 
-PHANTOM/PARTIAL tasks → surface to builder before proceeding.
-
-**Initialize execution state**:
-- `dev/executions/{slug}/status.json` — tracking state
-- `dev/executions/{slug}/progress.md` — task log
-- `dev/executions/{slug}/working-memory.md` — cross-task knowledge
+PHANTOM/PARTIAL tasks → surface to builder before proceeding. Do NOT execute phantom tasks without builder decision.
 
 ---
 
 ## Phase 1: Pre-Mortem
 
-Before dispatching any subagent, identify risks for THIS PRD.
+Identify risks for THIS PRD before dispatching any subagent.
 
-Risk categories to work through:
-1. **Context gaps** — What will subagents be missing that they need?
-2. **Reimplementation risk** — Does any task risk rebuilding something that exists?
+Risk categories:
+1. **Context gaps** — What will subagents be missing? Which files/patterns must be in the prompt?
+2. **Reimplementation risk** — Any task risks rebuilding something that exists?
 3. **Backward compatibility** — Will changes break existing functionality?
-4. **Test complexity** — Are there tricky test scenarios to anticipate?
-5. **Dependency ordering** — Are task dependencies correctly sequenced?
-6. **Scope drift** — Is any AC ambiguous enough to cause over/under-implementation?
+4. **Test complexity** — Tricky scenarios to anticipate? Mocking challenges?
+5. **Dependency ordering** — Task sequence correct? Any depends-on missing?
+6. **Scope drift** — Any AC ambiguous enough to cause over/under-implementation?
 7. **Integration risk** — Where do new components touch existing systems?
 8. **Documentation debt** — What docs will become stale?
 
@@ -79,20 +71,18 @@ For each pending task (in dependency order):
 
 ### Step 1: Prepare Context (Orchestrator)
 
-- Read prior completed tasks: what's been built, patterns established
+- Read completed tasks: what's been built, patterns established
 - Identify files the subagent should read first (exact paths)
-- Check which pre-mortem mitigations apply to this task
+- Check which pre-mortem mitigations apply
 - Check LEARNINGS.md in directories the subagent will touch
-- Read `working-memory.md` for cross-task knowledge
+- Read `plans/{slug}/working-memory.md` for cross-task knowledge
 
 ### Step 2: Craft Subagent Prompt
-
-Use this template:
 
 ```markdown
 You are implementing Task [ID] from the [plan-name] PRD.
 
-**PRD Goal**: [1 sentence from PRD]
+**PRD Goal**: [1 sentence]
 **Task ID**: [id]
 **Title**: [title]
 **Description**: [full description from prd.json]
@@ -101,103 +91,77 @@ You are implementing Task [ID] from the [plan-name] PRD.
 - [criterion 1]
 - [criterion 2]
 
-**Execution State Path**: dev/executions/{slug}/
-
-**Working Memory**: Before starting, read `dev/executions/{slug}/working-memory.md`.
-After completing, add entries to relevant sections (Discovered Patterns, Active Gotchas,
-Shared Utilities Created, Context Corrections). If nothing new: write NOTHING_NOVEL — Task N.
+**Working Memory**: Before starting, read `plans/{slug}/working-memory.md`.
+After completing, add entries to relevant sections. If nothing new: write NOTHING_NOVEL — Task N.
 
 **Context - Read These Files First**:
-1. `dev/executions/{slug}/working-memory.md` — cross-task knowledge from prior tasks
+1. `plans/{slug}/working-memory.md` — cross-task knowledge
 2. [domain expertise profile if available: .build/expertise/{domain}/PROFILE.md]
-3. [file] — [why it's relevant]
-...
+3. [specific files relevant to this task] — [why]
 
 **Important Patterns**:
-- [Pattern]: Reference [specific file that shows this pattern]
+- [Pattern]: See [specific file]
 
-**Reuse & Design**:
-- Use existing services, helpers, and abstractions. Do not reimplement what already exists.
-- Apply DRY and KISS. Prefer existing modules over new ones when they fit.
+**Reuse & Design**: Use existing services, helpers, and abstractions. Do not reimplement what exists.
 
 **Pre-Mortem Mitigations Applied**:
-- [Mitigation 1 from pre-mortem]
+- [Mitigation 1]
 
 **Quality Gates**: [from project CLAUDE.md QUALITY_GATES]
 
 After implementation:
 1. Run quality gates (must pass)
-2. Commit: "[type]([scope]): [description]"
-3. Update dev/executions/{slug}/prd.json — set status "complete", record commitSha
-4. Append to dev/executions/{slug}/progress.md
+2. Commit: "type(scope): description"
+3. Update plans/{slug}/prd.json — set task status "complete", record commitSha
 
-**Post-Task Signals** (include in completion report):
-REUSE: [what you reused]
-MISSING_CONTEXT: [what you had to discover]
-NEW_PATTERN: [pattern you created]
-BLOCKER_RESOLVED: [decision that unblocked you]
-NOTHING_NOVEL: [no surprises]
-OTHER: [anything else]
+**Post-Task Signals**:
+REUSE / MISSING_CONTEXT / NEW_PATTERN / BLOCKER_RESOLVED / NOTHING_NOVEL / OTHER
+(at least one — NOTHING_NOVEL is the expected default)
 
-Proceed with implementation.
+Proceed.
 ```
 
 ### Step 3: Reviewer Pre-Work Sanity Check
 
-Dispatch reviewer to validate the task prompt before developer starts:
-- Task description and AC are clear and unambiguous
-- Context is sufficient (files listed, patterns pointed to)
-- Dependencies from prior tasks are available
+Validate the task prompt: AC clear and testable? Context sufficient? Dependencies available?
 
-If **NEEDS REFINEMENT**, refine prompt before dispatching developer.
+If **NEEDS REFINEMENT** → refine prompt, then dispatch developer.
 
-### Step 4: Dispatch Developer
+### Step 4: Dispatch Developer Subagent
 
 Wait for completion report (Completed, Files Changed, Documentation Updated, Quality Checks, Commit, Signals).
 
 ### Step 5: Reviewer Code Review
 
-After developer completes, dispatch reviewer:
-- Technical review (no `any`, error handling, tests, backward compat)
-- AC review (meets criteria, no scope drift)
-- Quality check (DRY, KISS, best solution)
-- Reuse check (no reimplementation of existing code)
-- Documentation review (LEARNINGS.md updated if regression/first-use/non-obvious decision)
-- Quality gates passing
+Technical review, AC review, quality check (DRY/KISS), reuse check, documentation review, quality gates.
 
-**If APPROVED** → proceed to step 6.
-**If ITERATE** → dispatch developer again with structured feedback. Repeat until APPROVED.
+**If APPROVED** → proceed.
+**If ITERATE** → dispatch developer with structured feedback. Repeat until APPROVED.
 
 ### Step 5.5: Documentation Synthesis
 
-Before marking complete, scan developer's report for doc gaps:
-- Did they mention a new pattern in reflection but not in Documentation Updated?
-- First use of something that isn't documented?
-
-If gap found, send back: "Your reflection mentioned X. Add it to [LEARNINGS.md path] before I mark complete."
+Before marking complete — did the developer's report reveal an undocumented pattern or first-use? If yes, send back with targeted note before marking complete.
 
 ### Step 6: Update Tracking
 
-Mark task complete in `dev/executions/{slug}/prd.json` (`status: "complete"`).
-Update `dev/executions/{slug}/status.json`.
-Report `[DONE:N]` after each task.
+Mark task complete in `plans/{slug}/prd.json`.
+Output `[DONE:N]` after each task.
 
 ---
 
 ## Phase 3: Holistic Review & Close
 
-After all tasks complete, the Orchestrator reviews the whole:
+### Holistic Review
 
-1. **Does this solve the problem?** Re-read the PRD problem statement and success criteria.
-2. **Is anything missing?** Gaps the task-level AC didn't cover but the PRD implies?
-3. **Documentation check**: Are any docs now stale?
-4. **Learnings**: What should be captured for future work?
+1. Does this solve the PRD's problem statement?
+2. Anything missing that the task-level ACs didn't cover?
+3. Any docs now stale?
 
 ### Memory Entry (MANDATORY before final report)
 
 Create `memory/entries/YYYY-MM-DD_{slug}-learnings.md`:
 1. Metrics (tasks, success rate, iterations, tests added)
-2. Pre-mortem effectiveness (risks materialized? mitigations effective?)
+2. Pre-mortem effectiveness (risks materialized?)
 3. What worked / what didn't (+/-)
 4. Recommendations (continue/stop/start)
 5. Follow-ups (refactor items, doc gaps)
@@ -212,23 +176,18 @@ Add index line to `memory/MEMORY.md`.
 **Status**: ✅ N/N tasks complete
 **Quality**: N% first-attempt | N iterations
 **Tests**: N passing (+N added)
-**Pre-mortem**: N/N risks materialized
 
 ## Deliverables
-- [Feature 1] — description
-- [Feature 2] — description
+- [Feature] — description
 
 ## Key Learnings
 1. [Learning] — [Evidence]
 
-## Pre-Mortem Review
-[Risk | Materialized | Effective]
-
 ## Recommendations
 - **Continue**: [patterns that worked]
 - **Stop**: [patterns to change]
-- **Start**: [new practices to adopt]
+- **Start**: [new practices]
 
 ## Refactor Items
-- dev/work/plans/refactor-[name]/plan.md — [summary]
+- plans/refactor-[name]/plan.md — [summary]
 ```

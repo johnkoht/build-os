@@ -9,12 +9,12 @@ Convert an approved plan into a PRD (`prd.md`) and structured task list (`prd.js
 
 ## When to Use
 
-- After a plan is approved and you chose "Convert to PRD"
-- Ship Phase 2.2: converting plan artifacts to execution-ready PRD
+- After a plan is approved: "Convert to PRD"
+- Ship Phase 2.2: converting plan to execution-ready PRD
 
 ## Prerequisites
 
-- An approved plan is in context or at `dev/work/plans/{slug}/plan.md`
+- An approved plan exists (in conversation or at `plans/{slug}/plan.md`)
 
 ---
 
@@ -22,26 +22,26 @@ Convert an approved plan into a PRD (`prd.md`) and structured task list (`prd.js
 
 ### 1. Derive Feature Slug
 
-From the plan title, derive a kebab-case slug (e.g. `user-auth`, `payment-integration`). Use as the directory name under `dev/work/plans/`.
+From the plan title, derive a kebab-case slug (e.g. `user-auth`, `payment-integration`). Directory: `plans/{slug}/`.
 
 ### 2. Create prd.md
 
-Create `dev/work/plans/{slug}/prd.md`:
+Create `plans/{slug}/prd.md`:
 
 - **Goal** — 1-2 sentences summarizing what this work achieves
-- **Tasks** — One per plan step (group sub-steps where they naturally belong together)
-- **Acceptance Criteria** — Explicit, testable criteria per task. If inferred from plan, flag: `<!-- inferred from plan -->`
+- **Tasks** — One per plan step (group sub-steps where they naturally belong)
+- **Acceptance Criteria** — Explicit, testable criteria per task. Flag inferred ACs: `<!-- inferred from plan -->`
 
-Each task must have: clear title, description, at least one acceptance criterion.
+Each task must have: title, description, at least one acceptance criterion.
 
 **AC quality check** — Every criterion must be:
 - Testable: verifiable with code or observation
 - Specific: "returns 200 on success" not "works properly"
-- Bounded: clear scope
+- Bounded: clear scope, not open-ended
 
 ### 3. Generate prd.json
 
-Immediately after creating prd.md, generate `dev/work/plans/{slug}/prd.json` from the same internal representation — do NOT re-parse the markdown.
+Immediately after creating prd.md, generate `plans/{slug}/prd.json` from the same internal representation — do NOT re-parse the markdown.
 
 ```json
 {
@@ -75,14 +75,38 @@ Immediately after creating prd.md, generate `dev/work/plans/{slug}/prd.json` fro
 - [ ] `metadata.totalTasks` matches array length
 - [ ] `branchName` follows `feature/{slug}` convention
 
-### 4. Present Summary
+### 4. Initialize working-memory.md
+
+Create `plans/{slug}/working-memory.md` — subagents share cross-task knowledge through this file:
+
+```markdown
+# Working Memory — {slug}
+
+Cross-task knowledge. Every developer reads this before starting and updates it after completing.
+
+## Discovered Patterns
+*(Add: [Task N] pattern-name: description at file:line)*
+
+## Active Gotchas
+*(Add: [Task N] issue the next developer must know about)*
+
+## Shared Utilities Created
+*(Add: [Task N] functionName() in path/to/file)*
+
+## Context Corrections
+*(Add: [Task N] MISSING_CONTEXT: what was missing and where to find it)*
+```
+
+### 5. Present Summary
 
 ```
 ✅ PRD artifacts created
 
 Feature: {slug}
-PRD:      dev/work/plans/{slug}/prd.md  ({N} tasks)
-Tasks:    dev/work/plans/{slug}/prd.json
+Plan:     plans/{slug}/plan.md
+PRD:      plans/{slug}/prd.md  ({N} tasks)
+Tasks:    plans/{slug}/prd.json
+Memory:   plans/{slug}/working-memory.md
 
 Next: /ship for full automation, or /build to execute directly.
 ```

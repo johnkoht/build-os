@@ -1,0 +1,221 @@
+#!/usr/bin/env bash
+set -e
+
+BUILD_OS="$(cd "$(dirname "$0")/.." && pwd)"
+
+# ── helpers ──────────────────────────────────────────────────────────────────
+usage() {
+  cat <<EOF
+Usage: new-project <name> [options]
+
+Scaffold a new project with build-os structure.
+
+Arguments:
+  name          Project name (used for directory and slug)
+
+Options:
+  --dir <path>  Create project at this path (default: ~/code/<name>)
+  --lang <lang> Language preset: typescript | ruby | python | go | node
+  --no-git      Skip git init
+  --help        Show this help
+
+Examples:
+  new-project my-app
+  new-project my-api --lang ruby
+  new-project prototype --dir ~/Desktop/prototype --no-git
+EOF
+  exit 0
+}
+
+die() { echo "❌ $*" >&2; exit 1; }
+info() { echo "  $*"; }
+ok() { echo "✓ $*"; }
+
+# ── quality gate presets ──────────────────────────────────────────────────────
+quality_gates_for() {
+  case "$1" in
+    typescript) echo 'npm run typecheck && npm test' ;;
+    node)       echo 'npm test' ;;
+    ruby)       echo 'bundle exec rubocop && bundle exec rspec' ;;
+    python)     echo 'ruff check . && pytest' ;;
+    go)         echo 'go vet ./... && go test ./...' ;;
+    *)          echo '# TODO: add your typecheck + test commands' ;;
+  esac
+}
+
+# ── parse args ────────────────────────────────────────────────────────────────
+NAME=""
+DIR=""
+LANG=""
+INIT_GIT=true
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --help|-h) usage ;;
+    --dir)     DIR="$2"; shift 2 ;;
+    --lang)    LANG="$2"; shift 2 ;;
+    --no-git)  INIT_GIT=false; shift ;;
+    -*)        die "Unknown option: $1" ;;
+    *)
+      [[ -z "$NAME" ]] && NAME="$1" || die "Unexpected argument: $1"
+      shift ;;
+  esac
+done
+
+[[ -z "$NAME" ]] && usage
+
+# Derive slug (kebab-case from name)
+SLUG=$(echo "$NAME" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
+[[ -z "$DIR" ]] && DIR="$HOME/code/$SLUG"
+
+# ── confirm ───────────────────────────────────────────────────────────────────
+echo ""
+echo "new-project: $NAME"
+echo "  Directory : $DIR"
+echo "  Language  : ${LANG:-not specified}"
+echo "  Git init  : $INIT_GIT"
+echo ""
+read -rp "Proceed? [Y/n] " confirm
+[[ "$confirm" =~ ^[Nn] ]] && echo "Aborted." && exit 0
+
+# ── create directory ──────────────────────────────────────────────────────────
+if [[ -d "$DIR" ]]; then
+  echo "⚠️  Directory already exists: $DIR"
+  read -rp "Use it anyway? [y/N] " use_existing
+  [[ ! "$use_existing" =~ ^[Yy] ]] && echo "Aborted." && exit 0
+else
+  mkdir -p "$DIR"
+  ok "Created $DIR"
+fi
+
+cd "$DIR"
+
+# ── scaffold structure ────────────────────────────────────────────────────────
+echo ""
+echo "Scaffolding..."
+
+# Core directories
+mkdir -p plans memory .build/expertise .build/agents
+ok "Created plans/, memory/, .build/"
+
+# memory/MEMORY.md
+cat > memory/MEMORY.md <<EOF
+# Memory
+
+Project memory index. Add entries here after significant work.
+
+## Index
+
+<!-- Format: - [YYYY-MM-DD] [feature](entries/YYYY-MM-DD_feature-learnings.md) — one-line summary -->
+EOF
+ok "Created memory/MEMORY.md"
+
+# memory/entries/ placeholder
+mkdir -p memory/entries
+touch memory/entries/.gitkeep
+
+# CLAUDE.md from template
+QUALITY_GATES=$(quality_gates_for "$LANG")
+TEMPLATE="$BUILD_OS/templates/project-claude.md"
+
+if [[ -f "$TEMPLATE" ]]; then
+  # Fill in the template
+  sed \
+    -e "s/\[Project Name\]/$NAME/" \
+    -e "s|npm run typecheck && npm test|$QUALITY_GATES|" \
+    "$TEMPLATE" > CLAUDE.md
+  ok "Created CLAUDE.md (from template)"
+else
+  cat > CLAUDE.md <<EOF
+# $NAME
+
+## Build OS
+This project uses the build-os process. See \`~/.claude/build/AGENTS.md\`.
+
+## Quality Gates
+\`\`\`bash
+QUALITY_GATES="$QUALITY_GATES"
+\`\`\`
+
+## Tech Stack
+- Language: ${LANG:-unknown}
+EOF
+  ok "Created CLAUDE.md (minimal)"
+fi
+
+# .build/README.md hint
+cat > .build/README.md <<EOF
+# .build — Project-Specific Build Configuration
+
+## Expertise Profiles (Layer 4)
+
+Add domain expertise profiles for subagents:
+  .build/expertise/{domain}/PROFILE.md
+
+Each profile should describe:
+- Architecture map for that domain
+- Component relationships and key abstractions
+- Invariants (things that must always be true)
+- Anti-patterns and common mistakes
+- Required reading before touching this domain
+
+## Project Agents
+
+Add project-specific agent personas:
+  .build/agents/{name}.md
+
+Use the same frontmatter format as ~/.claude/build/agents/*.md.
+Reference them in CLAUDE.md under [Project Agents].
+EOF
+ok "Created .build/README.md"
+
+# .gitignore
+if [[ ! -f .gitignore ]]; then
+  cat > .gitignore <<EOF
+# dependencies
+node_modules/
+vendor/
+.bundle/
+
+# build output
+dist/
+build/
+*.pyc
+__pycache__/
+
+# env
+.env
+.env.local
+*.local
+
+# OS
+.DS_Store
+EOF
+  ok "Created .gitignore"
+fi
+
+# ── git init ──────────────────────────────────────────────────────────────────
+if [[ "$INIT_GIT" == true ]]; then
+  if [[ ! -d .git ]]; then
+    git init -q
+    git add -A
+    git commit -q -m "init: scaffold $NAME with build-os"
+    ok "Git repo initialized + initial commit"
+  else
+    ok "Git repo already exists"
+  fi
+fi
+
+# ── done ─────────────────────────────────────────────────────────────────────
+echo ""
+echo "✅ Project scaffolded: $DIR"
+echo ""
+echo "Next steps:"
+echo "  1. cd $DIR"
+echo "  2. Edit CLAUDE.md — fill in project context, tech stack, conventions"
+if [[ -z "$LANG" ]]; then
+  echo "  3. Set QUALITY_GATES in CLAUDE.md to your typecheck + test commands"
+fi
+echo "  4. Open in Claude Code: claude ."
+echo ""
+echo "When ready to build: /ship (after approving a plan)"

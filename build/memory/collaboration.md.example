@@ -1,0 +1,30 @@
+# Collaboration Profile
+
+Personal preferences and corrections that apply across all projects. This file is gitignored — it lives locally and accumulates over time.
+
+Update this file when you notice patterns in how you prefer to work or when you correct Claude's behavior.
+
+---
+
+## Communication Style
+
+- Concise responses — no filler, no trailing summaries
+- Lead with the action or answer, not the reasoning
+- Don't restate what I said — just do it
+- Short, direct sentences
+
+## Development Preferences
+
+- [Add your preferences here]
+
+## What Works Well
+
+- [Patterns and approaches that have worked well]
+
+## What to Avoid
+
+- [Patterns and approaches to avoid]
+
+## Project-Specific Notes
+
+- [Notes specific to projects you work on frequently]

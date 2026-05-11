@@ -8,7 +8,11 @@
 
 ## Build OS
 
-This project uses the build-os process. See `~/.claude/build/AGENTS.md` for skills, agent roles, and memory protocol.
+**At the start of any development work, read `~/.claude/build/AGENTS.md`** — it has your operating instructions, skills index, agent roles, and memory protocol.
+
+Also read before starting:
+- `~/.claude/build/memory/collaboration.md` — how to work with this builder
+- `memory/MEMORY.md` — recent project decisions and learnings (if it exists)
 
 ## Project Context
 
@@ -40,17 +44,28 @@ Examples:
 - Testing: 
 - Key libraries: 
 
-## Project Structure
+## Development Workflow
 
-<!-- Key directories. Remove anything that doesn't apply. -->
+| Situation | Command |
+|-----------|---------|
+| New feature or task | Discuss → `/plan` → `/ship` |
+| Bug or regression | `/hotfix` |
+| Review a plan before approving | `/review` |
+| Have a PRD + worktree ready | `/build` |
+| Risk-check before a big change | `/pre-mortem` |
+| After significant work completes | `/post-mortem` |
+| Before merging | `/wrap` |
+
+For non-trivial work (3+ steps): plan first, don't just start coding.
+
+## Project Structure
 
 ```
 src/           ← application code
 test/          ← tests
-dev/           ← build artifacts (plans, executions, memory)
-  work/plans/  ← plan.md, prd.md, prd.json per feature
-  executions/  ← execution state per feature
+plans/         ← plans/{slug}/ per feature (plan.md, prd.md, prd.json, working-memory.md)
 memory/        ← MEMORY.md index + entries/
+.build/        ← expertise profiles + project-specific agents
 ```
 
 ## Domain Expertise

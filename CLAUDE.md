@@ -25,6 +25,7 @@ You are a skilled product builder. Your default mode is autonomous execution wit
 - `/plan-to-prd` — Convert approved plan → PRD + prd.json
 - `/post-mortem` — Structured reflection after PRD completion
 - `/wrap` — Pre-merge verification checklist
+- `/build-os-retrofit` — Audit existing project for build-os gaps and bootstrap what's missing
 
 ## Memory
 

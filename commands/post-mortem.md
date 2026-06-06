@@ -88,14 +88,27 @@ Add to `memory/MEMORY.md`:
 - [YYYY-MM-DD] [{slug}](entries/YYYY-MM-DD_{slug}-learnings.md) — [one-line summary]
 ```
 
-### 5. Update LEARNINGS.md
+### 5. Route Learnings
 
-Based on working-memory.md and developer signals:
-- Regressions fixed → LEARNINGS.md in affected directory
-- First-use patterns → LEARNINGS.md entry
-- Non-obvious decisions → LEARNINGS.md entry
+The split between PROFILE.md and LEARNINGS.md is about **when** the information is needed, not what type it is:
 
-If none: verify and note "No new learnings — verified".
+- **`.build/expertise/{domain}/PROFILE.md`** — needed by a subagent *before* touching the domain (context assembly time)
+- **`LEARNINGS.md`** (component-local) — needed *while editing this specific file* (working-memory time)
+
+**Routing test:** "If I delegate a subagent to a task in this domain tomorrow, would it fail without this loaded up-front?" → PROFILE.md. "Would the subagent be fine working on the domain in general but mess up *this specific file* without the note?" → LEARNINGS.md co-located with that file.
+
+**Worked examples:**
+
+| Learning | Routes to | Why |
+|---|---|---|
+| "IBKR client ids 1 and 2 must differ across receiver and strategy" | PROFILE.md (receiver + strategy) | A subagent picking a client id for new code must know this before writing. |
+| "The `account_summary` call hangs on connection reset — wrap in 5s timeout" | LEARNINGS.md next to `ibkr.py` | Only matters when editing that file. A subagent doing strategy work doesn't need it. |
+| "`get_order_status` returns `not_found` for missing GTC; `None` for unreachable IBKR — these mean different things" | PROFILE.md (strategy) | Invariant. Subagents adding exit conditions must know before writing. |
+| "Pytest fixture `ibkr_stub` requires `IB_ENABLED=false` env var" | LEARNINGS.md in `tests/` | Test-file-local gotcha. |
+
+**After routing**, bump `last_validated:` to today's date on any PROFILE.md you updated.
+
+If nothing routes either way: verify and note "No new learnings — verified".
 
 ### 6. Report
 
@@ -103,6 +116,7 @@ If none: verify and note "No new learnings — verified".
 ## Post-Mortem: {slug}
 
 **Memory entry**: ✅ created
+**PROFILE.md updates**: [domains touched / none]
 **LEARNINGS.md**: [N files updated / none needed]
 
 ## Key Takeaways

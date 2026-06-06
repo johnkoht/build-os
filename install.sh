@@ -68,5 +68,5 @@ if [[ ":$PATH:" != *":$LOCAL_BIN:"* ]]; then
 fi
 
 echo ""
-echo "Slash commands: /ship /build /hotfix /review /pre-mortem /plan-to-prd /post-mortem /wrap /new-project"
+echo "Slash commands: /ship /build /hotfix /review /pre-mortem /plan-to-prd /post-mortem /wrap /build-os-retrofit /new-project"
 echo "CLI command:    new-project <name> [--lang typescript|ruby|python|go]"

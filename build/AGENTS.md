@@ -35,6 +35,8 @@
 |purpose:Expertise profiles provide architecture maps, component relationships, invariants, anti-patterns, and required reading for subagents
 |when:Attached to subagent context as Layer 4 when task touches that domain
 |location:Each project provides its own profiles; none are global
+|frontmatter:Each PROFILE.md declares `domain`, `scope` (git-pathspec globs), and `last_validated` (date) — `/wrap` reads these to detect drift and staleness
+|bootstrap:Projects retrofitted with build-os start with empty `.build/expertise/` — run `/build-os-retrofit` to audit gaps and bootstrap profiles
 
 [Skills]|root:~/.claude/commands
 |ship:{triggers:"/ship after plan approval, ship this plan, build autonomously",does:"Full plan-to-merge workflow. Pre-mortem, review, PRD, worktree, build, wrap, merge — with intelligent gates."}
@@ -44,7 +46,8 @@
 |pre-mortem:{triggers:"Before executing approved plans (3+ steps), before large refactors, before new systems",does:"Pre-mortem risk analysis with actionable mitigations."}
 |plan-to-prd:{triggers:"Convert to PRD, after plan approval",does:"Convert approved plan → PRD + prd.json for autonomous execution."}
 |post-mortem:{triggers:"After PRD completion, Create the post-mortem, Extract learnings",does:"Systematic post-mortem: outcomes, learnings, memory entry."}
-|wrap:{triggers:"Before merge, Verify before ship, wrap up",does:"Pre-merge checklist: quality gates, uncommitted changes, memory entry, LEARNINGS.md."}
+|wrap:{triggers:"Before merge, Verify before ship, wrap up",does:"Pre-merge checklist: quality gates, uncommitted changes, memory entry, LEARNINGS.md, expertise profile drift."}
+|build-os-retrofit:{triggers:"retrofit this project, my project missing profiles, bootstrap build-os here, audit my build-os setup",does:"Audit existing project for build-os gaps and bootstrap missing pieces — expertise profiles, memory/, CLAUDE.md wiring."}
 
 [Memory]|entry:memory/MEMORY.md (project-local)
 |personal:~/.claude/build/memory/collaboration.md (cross-project preferences)

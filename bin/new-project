@@ -233,4 +233,5 @@ if [[ -z "$LANG" ]]; then
 fi
 echo "  4. Open in Claude Code: claude ."
 echo ""
+echo "Expertise profiles: run /build-os-retrofit once you have 2-3 domains identified."
 echo "When ready to build: /ship (after approving a plan)"

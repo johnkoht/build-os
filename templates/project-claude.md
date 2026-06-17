@@ -70,6 +70,8 @@ memory/        ← MEMORY.md index + entries/
 
 ## Domain Expertise
 
+**Before non-trivial code work in this project, follow the `auto_load` procedure in `~/.claude/build/AGENTS.md` `[Expertise]`** — scan `.build/expertise/*/PROFILE.md` `scope:` frontmatter and load profiles whose globs match the files you're about to touch. This is reinforcement of AGENTS.md's auto_load (the actual behavior is driven there); the explicit hint here helps builders reading the project's own CLAUDE.md understand the loading model.
+
 <!-- 
   If this project has domain profiles for subagents, document them here.
   Profiles live at: .build/expertise/{domain}/PROFILE.md

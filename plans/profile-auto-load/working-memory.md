@@ -18,6 +18,7 @@ Cross-task knowledge. Every developer reads this before starting and updates it 
 - [Task 3] pre-mortem Step 0 structure: Step 0a extracts `**File:**` values from each plan task locally (skill-local path resolution, no delegation). Step 0b hands the collected path list to `auto_load` in AGENTS.md — the matching/loading logic lives entirely there, so pre-mortem never duplicates it. The separation is intentional: pre-mortem owns "what files are in scope," AGENTS.md owns "which profiles match and how to load them." Loaded profiles then feed the risk analysis in categories 6 (scope drift vs invariants), 7 (integration seams vs Architecture Map), and 8 (documentation debt including `last_validated:` bumps).
 - [Task 4] plan-to-prd Step 2 structure: skill-local path extraction (pull `**File:**` values from plan tasks) → hand path list to AGENTS.md `auto_load`; matching/loading logic stays in AGENTS.md, prd.md task generation then respects loaded PROFILE.md architecture.
 - [Task 5] review Quick vs Full mode: Steps 2 and 3 now have explicit Quick (target-scoped, via auto_load) and Full (target + adjacent/Architecture Map) branches; neither step is gated to Full Review only.
+- [Task 6] template scan-on-start placement: new paragraph inserted immediately after the `## Domain Expertise` heading (before the existing comment block), so the instruction is the first thing a builder reads in that section, with the comment-block examples following below.
 
 ## Shared Utilities Created
 *(Add: [Task N] functionName() in path/to/file)*

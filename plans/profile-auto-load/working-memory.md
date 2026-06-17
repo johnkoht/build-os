@@ -18,7 +18,8 @@ Cross-task knowledge. Every developer reads this before starting and updates it 
 *(Add: [Task N] functionName() in path/to/file)*
 
 ## Context Corrections
-*(Add: [Task N] MISSING_CONTEXT: what was missing and where to find it)*
+
+- **[Task 1] PRD AC #1 typo (orchestrator override).** AC #1's literal grep `grep "auto_load" build/AGENTS.md ≥ 7` is mis-authored — sub-keys correctly don't repeat the umbrella name, so the literal grep returns 3. The bottom-of-PRD verification block uses the correct grep (`grep -c "trigger:\|skip:\|..." ≥ 7`) and passes with 8. Implementation is faithful to the auto_load procedure; AC #1 grep string was wrong, not the code. Orchestrator approved on the bottom-of-PRD verification, not AC #1's literal text. Future PRDs: use the disjunctive grep form for nested-block ACs.
 
 ## Behavioral Walkthrough (Task 1 AC #7)
 

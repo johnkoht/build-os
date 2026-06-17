@@ -4,6 +4,7 @@ Cross-task knowledge. Every developer reads this before starting and updates it 
 
 ## Discovered Patterns
 *(Add: [Task N] pattern-name: description at file:line)*
+- [Task 1] auto_load compound-key style: Used multi-line `|auto_load:{` with each sub-key on its own `|  key:value` line (two-space indent inside the block), closed with `|}`. The existing `[Skills]` compound blocks are single-line `{key:val,key:val}` but those have short values; `auto_load` has 6 long sub-keys so multi-line is the only readable choice. Every line still starts with `|`, matching the pipe-delimited format. Located at build/AGENTS.md lines 40–48.
 
 ## Active Gotchas
 
@@ -24,6 +25,13 @@ Cross-task knowledge. Every developer reads this before starting and updates it 
 Document the auto_load mental walkthrough here after Task 1 lands:
 
 1. **Single profile, scope match.** Project has `.build/expertise/api/PROFILE.md` with `scope: api/**`. Target path: `api/src/foo.ts`. Expected: `api` profile body loaded. End-of-session warnings: none.
+   - Procedure trace: discovery → `.build/expertise/` exists; match → `scope: api/**` glob matches `api/src/foo.ts`; cap → only 1 profile, under limit; load → body loaded. ✓
+
 2. **Single profile, scope no match.** Same project. Target path: `frontend/src/foo.ts`. Expected: not loaded. Warnings: none.
+   - Procedure trace: discovery → exists; match → `scope: api/**` does NOT match `frontend/src/foo.ts`; load → skip body; no warning (profile has frontmatter, so no fallback heuristic triggers). ✓
+
 3. **Anchor no-frontmatter heuristic.** Project has 4 profiles: `node-api`, `react-native`, `memory-system`, `tooling` — all without `scope:` frontmatter. Target path: `api/src/foo.ts`. Expected: only `node-api` body loaded (heuristic match: `api/` substring in path). End-of-session ⚠️ surfaced suggesting `/build-os-retrofit`.
+   - Procedure trace: discovery → exists; match → no frontmatter on any profile → fall to `fallback:` heuristic; `node-api/` dir name → "api" substring present in `api/src/foo.ts` → load body; `react-native/` → no "mobile/" or "app/" in path → skip; `memory-system/` → no match → skip; `tooling/` → no match → skip. All 4 profiles lacked frontmatter → ONE end-of-session ⚠️ suggesting `/build-os-retrofit`. ✓
+
 4. **Cap at 3.** Project has 5 profiles with overlapping scope globs all matching `api/src/routes/user.ts`. Expected: 3 profiles with longest scope-glob matches loaded; one-line note listing the other 2.
+   - Procedure trace: discovery → exists; match → all 5 scope globs match; cap → rank by specificity (longest glob wins), load top 3; surface one-line note naming the other 2 profiles. ✓

@@ -33,10 +33,19 @@
 
 [Expertise]|domain knowledge for subagents — project-local `.build/expertise/{domain}/PROFILE.md`
 |purpose:Expertise profiles provide architecture maps, component relationships, invariants, anti-patterns, and required reading for subagents
-|when:Attached to subagent context as Layer 4 when task touches that domain
+|when:Loaded as Layer 4 by main agent and subagents before code-modifying work — see `auto_load` for the procedure
 |location:Each project provides its own profiles; none are global
 |frontmatter:Each PROFILE.md declares `domain`, `scope` (git-pathspec globs), and `last_validated` (date) — `/wrap` reads these to detect drift and staleness
 |bootstrap:Projects retrofitted with build-os start with empty `.build/expertise/` — run `/build-os-retrofit` to audit gaps and bootstrap profiles
+|auto_load:{
+|  trigger:Load when (a) caller has resolved target file paths AND (b) at least one Edit/Write/code-modifying Bash call is imminent. Mechanical — not based on "behavioral change" or "familiarity."
+|  skip:(a) single-token change the user named explicitly, (b) documentation-only edits (`*.md`, `docs/**`), (c) test-only changes with no domain-logic files in scope
+|  discovery:If `.build/expertise/` doesn't exist or is empty, skip silently. No warning.
+|  match:For each PROFILE.md, read frontmatter `scope:` globs; compare to target paths. Specificity = longest glob match wins.
+|  cap:Load at most 3 profile bodies per task. If more match, load 3 with longest scope-glob matches; surface a one-line note listing the rest.
+|  fallback:If PROFILE.md has no frontmatter, load body ONLY if any target path contains a substring matching the profile's directory name. Examples: `node-api/` matches paths containing `api/`; `react-native/` matches `mobile/` or `app/`. If no heuristic match, skip body and surface ONE end-of-session ⚠️ suggesting `/build-os-retrofit` — not mid-task.
+|  load:Only scope-matched (or heuristic-matched) bodies are loaded; non-matches stay on disk.
+|}
 
 [Skills]|root:~/.claude/commands
 |ship:{triggers:"/ship after plan approval, ship this plan, build autonomously",does:"Full plan-to-merge workflow. Pre-mortem, review, PRD, worktree, build, wrap, merge — with intelligent gates."}
@@ -59,7 +68,7 @@
 |layer_1:System awareness — this file (AGENTS.md)
 |layer_2:Coding standards — ~/.claude/build/standards/build-standards.md
 |layer_3:Role behavior — ~/.claude/build/agents/{role}.md
-|layer_4:Domain expertise — project-local .build/expertise/{domain}/PROFILE.md (when available)
+|layer_4:Domain expertise — project-local .build/expertise/{domain}/PROFILE.md (when available; loaded by main agent AND subagents via `auto_load`)
 
 [Project Structure]|standard layout expected by build skills
 |plans:plans/{slug}/ — plan.md, prd.md, prd.json, pre-mortem.md, review.md, working-memory.md, build-log.md

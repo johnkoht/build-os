@@ -17,9 +17,10 @@
         "Behavioral walkthrough documented in working-memory.md covers: scope-match-loads, scope-no-match-skip, anchor-heuristic-load with end-of-session warning, 5-matches-cap-to-3 with note",
         "AGENTS.md still parses as the same compact pipe-delimited format — no broken keys"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "72af7a609dd01083bb5c2e7ba090ec957cb4385e"
     },
     {
       "id": "task-2-hotfix-routing",
@@ -34,9 +35,10 @@
         "Phase 1 step 2 references AGENTS.md auto_load",
         "No prior LEARNINGS.md behavior is removed — routing is additive"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "26fc391"
     },
     {
       "id": "task-3-pre-mortem-step-0",
@@ -50,9 +52,10 @@
         "Risk category 8 mentions last_validated: bump",
         "grep 'auto_load' commands/pre-mortem.md returns at least one line"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "0223a34"
     },
     {
       "id": "task-4-plan-to-prd-load",
@@ -65,9 +68,10 @@
         "The PRD-creation step references loaded PROFILE.md / loaded profiles",
         "Step numbering remains coherent — no duplicate numbers, no gaps"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "b84d908"
     },
     {
       "id": "task-5-review-quick-mode",
@@ -81,9 +85,10 @@
         "Full Review branches add 'adjacent' / 'Architecture Map' / cross-domain context language",
         "grep 'Quick mode:' commands/review.md returns at least 2 lines"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "bbf3edd"
     },
     {
       "id": "task-6-template-scan-on-start",
@@ -95,15 +100,16 @@
         "The added paragraph mentions both 'scope:' frontmatter and 'files you're about to touch'",
         "Existing profile-list example bullets (api:, models:) remain intact below the new paragraph"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "f214b14"
     }
   ],
   "metadata": {
     "createdAt": "2026-06-17T00:00:00Z",
     "totalTasks": 6,
-    "completedTasks": 0,
+    "completedTasks": 6,
     "failedTasks": 0
   }
 }

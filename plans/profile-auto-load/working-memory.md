@@ -5,6 +5,7 @@ Cross-task knowledge. Every developer reads this before starting and updates it 
 ## Discovered Patterns
 *(Add: [Task N] pattern-name: description at file:line)*
 - [Task 1] auto_load compound-key style: Used multi-line `|auto_load:{` with each sub-key on its own `|  key:value` line (two-space indent inside the block), closed with `|}`. The existing `[Skills]` compound blocks are single-line `{key:val,key:val}` but those have short values; `auto_load` has 6 long sub-keys so multi-line is the only readable choice. Every line still starts with `|`, matching the pipe-delimited format. Located at build/AGENTS.md lines 40–48.
+- [Task 2] hotfix routing structure: Phase 3 (reviewer subagent) DECIDES the routing — it appends a `**Profile routing**: PROFILE.md ({domain}) / LEARNINGS.md ({file}) / none` line using the same two-question test as post-mortem lines 93–98. Phase 4 step 1 APPLIES that decision mechanically (no re-judgment): updates PROFILE.md (bumping `last_validated:`) or LEARNINGS.md or both (step 2 "optional secondary route" allows both to fire). Phase 4 step 3 report surfaces both `**PROFILE.md**:` and `**LEARNINGS.md**:` for the builder. The key design: decision is in Phase 3 (the review gate), application is in Phase 4 (the close gate) — these must never be merged.
 
 ## Active Gotchas
 

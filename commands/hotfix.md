@@ -34,9 +34,8 @@ Before writing any code, understand the problem deeply.
    - What's the actual behavior?
    - What are the reproduction steps?
 
-2. **Load relevant expertise** (if available)
-   - Check `.build/expertise/{domain}/PROFILE.md` for relevant domains
-   - Check LEARNINGS.md in affected directories
+2. **Load relevant expertise**
+   - Resolve affected files from the bug report, then follow the `auto_load` procedure in `~/.claude/build/AGENTS.md` `[Expertise]` with those paths as targets. (Loads scope-matched PROFILE.md bodies and any LEARNINGS.md in affected directories.)
 
 3. **Identify**:
    - Root cause hypothesis
@@ -99,6 +98,14 @@ Tests added/updated:
 [list tests]
 
 Review the implementation. Return APPROVED or ITERATE with structured feedback.
+
+Additionally, decide profile routing using the test from `commands/post-mortem.md` lines 93–98:
+- "If I delegate a subagent to a task in this domain tomorrow, would it fail without this loaded up-front?" → PROFILE.md.
+- "Would the subagent be fine working on the domain in general but mess up *this specific file* without the note?" → LEARNINGS.md.
+- If neither → none.
+
+Reviewer output adds one line:
+**Profile routing**: PROFILE.md ({domain}) / LEARNINGS.md ({file}) / none
 ```
 
 - **APPROVED** → proceed to Phase 4
@@ -110,10 +117,14 @@ If subagent not available, self-review using checklist from `~/.claude/build/age
 
 ## Phase 4: Close
 
-1. **Update LEARNINGS.md** (if applicable)
-   - If this was a regression, first-use pattern, or non-obvious design decision, update the nearest LEARNINGS.md
+1. **Apply Phase 3 routing decision.**
+   - If `PROFILE.md ({domain})`: update `.build/expertise/{domain}/PROFILE.md` with the new invariant, anti-pattern, or architectural rule. Bump `last_validated:` to today's date.
+   - If `LEARNINGS.md ({file})`: update the nearest LEARNINGS.md to that file with the regression, first-use pattern, or non-obvious design decision.
+   - If `none`: skip.
 
-2. **Report to builder**:
+2. **Optional secondary route.** Both can fire: a fix may produce both an architectural invariant (PROFILE.md) AND a file-local gotcha (LEARNINGS.md). Apply both if Phase 3 flagged both.
+
+3. **Report to builder**:
    ```
    ## ✅ Bug Fixed
 
@@ -122,6 +133,7 @@ If subagent not available, self-review using checklist from `~/.claude/build/age
    **Files**: [list]
    **Tests**: [added/updated]
    **Commit**: [sha]
+   **PROFILE.md**: [domains touched / none]
    **LEARNINGS.md**: [updated / not applicable — reason]
    ```
 

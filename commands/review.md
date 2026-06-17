@@ -38,15 +38,24 @@ Output: `**Review Path**: Quick / Full` + reason.
 
 ---
 
-## Step 2: Load Expertise Profiles (Full Review only)
+## Step 2: Load Expertise Profiles
 
-If the project has `.build/expertise/{domain}/PROFILE.md` for relevant domains, load them and extract key sections (invariants, anti-patterns, key abstractions).
+**Quick mode:**
+- Resolve target paths from the artifact under review: plan `**File:**` fields, PRD task files, or implementation diff.
+- Call AGENTS.md `auto_load` with those paths. Loads scope-matched PROFILE.md bodies (with the 3-profile cap and no-frontmatter fallback).
+
+**Full Review:**
+- Same as Quick (call `auto_load`), PLUS load adjacent profiles whose Architecture Map references files in scope. These give cross-domain context that scope-only matching misses.
 
 ---
 
-## Step 3: Scan LEARNINGS.md (Full Review only)
+## Step 3: Scan LEARNINGS.md
 
-Check for LEARNINGS.md files in directories the plan affects. Does the plan avoid documented pitfalls and respect documented invariants?
+**Quick mode:**
+- Scan LEARNINGS.md files ONLY in directories matching target paths. Confirm the plan/PRD/implementation respects documented invariants and avoids documented pitfalls.
+
+**Full Review:**
+- Scan LEARNINGS.md in target-path directories PLUS adjacent directories where related code lives.
 
 ---
 

@@ -18,6 +18,18 @@ Run a structured pre-mortem risk analysis before starting multi-step work.
 
 ## Workflow
 
+### 0. Load Relevant Expertise
+
+Pre-mortem runs before execution — `Edit`/`Write` is not yet imminent. So path resolution happens HERE, then we hand paths to `auto_load`.
+
+**0a. Resolve target paths.** Extract `**File:**` values from each task in the plan's `## Tasks` section. Collect into a target-path list. If a task has no `**File:**` field, infer from the task description (last resort).
+
+**0b. Load profiles via AGENTS.md `auto_load`.** Pass the path list to the `auto_load` procedure in `~/.claude/build/AGENTS.md` `[Expertise]`. Load matching profile bodies — at minimum the Invariants and Anti-Patterns sections.
+
+The loaded profiles inform the risk analysis below. Reference them by domain name in the risks they relate to.
+
+---
+
 ### 1. Work Through Risk Categories
 
 For each category, ask: "What could go wrong in THIS work?"
@@ -37,11 +49,11 @@ Not generic: "Things might break"
 
 5. **Dependency ordering** — Is the task sequence correct? Does any task depend on output from another?
 
-6. **Scope drift** — Is any AC ambiguous enough to cause over/under-implementation? Vague words: "properly", "correctly", "as needed"?
+6. **Scope drift** — Is any AC ambiguous enough to cause over/under-implementation? Vague words: "properly", "correctly", "as needed"? Cross-check against loaded PROFILE.md invariants — does any AC violate or extend them?
 
-7. **Integration risk** — Where do new components touch existing systems? What are the seams?
+7. **Integration risk** — Where do new components touch existing systems? What are the seams? Check loaded PROFILE.md Architecture Map — are seams accounted for?
 
-8. **Documentation debt** — What docs will become stale after this work? README, LEARNINGS.md, expertise profiles?
+8. **Documentation debt** — What docs will become stale after this work? README, LEARNINGS.md, expertise profiles? If loaded PROFILE.md invariants are being changed, does the profile itself need an update + `last_validated:` bump?
 
 9. **Environment/config risk** — Secrets, environment variables, external services, local-only dependencies?
 

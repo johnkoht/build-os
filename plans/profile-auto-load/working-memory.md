@@ -15,6 +15,8 @@ Cross-task knowledge. Every developer reads this before starting and updates it 
 - **[Task 2] hotfix.md routing wording** must match `commands/post-mortem.md` lines 93–98 exactly. Either copy verbatim or reference: "Use the routing test from commands/post-mortem.md."
 - **[Task 3/4] path extraction is skill-local.** AGENTS.md auto_load assumes paths are already resolved. Pre-mortem and plan-to-prd both extract paths from plan tasks' `**File:**` fields locally before calling auto_load.
 
+- [Task 3] pre-mortem Step 0 structure: Step 0a extracts `**File:**` values from each plan task locally (skill-local path resolution, no delegation). Step 0b hands the collected path list to `auto_load` in AGENTS.md — the matching/loading logic lives entirely there, so pre-mortem never duplicates it. The separation is intentional: pre-mortem owns "what files are in scope," AGENTS.md owns "which profiles match and how to load them." Loaded profiles then feed the risk analysis in categories 6 (scope drift vs invariants), 7 (integration seams vs Architecture Map), and 8 (documentation debt including `last_validated:` bumps).
+
 ## Shared Utilities Created
 *(Add: [Task N] functionName() in path/to/file)*
 

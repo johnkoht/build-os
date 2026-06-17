@@ -1,0 +1,109 @@
+{
+  "name": "profile-auto-load",
+  "branchName": "feature/profile-auto-load",
+  "goal": "Make expertise profile loading automatic for the main agent and add PROFILE.md routing to /hotfix, /pre-mortem, /plan-to-prd, and /review Quick mode — closing the read/write asymmetry surfaced by the anchor project's stale profiles.",
+  "userStories": [
+    {
+      "id": "task-1-agents-auto-load",
+      "title": "AGENTS.md — add auto_load procedure to [Expertise]",
+      "description": "Update [Expertise]|when: line and [Context Stack]|layer_4: line, then add a new compound key auto_load: with sub-keys trigger, skip, discovery, match, cap, fallback, load. AGENTS.md is the matcher; callers supply target paths. Mechanical trigger (paths known + Edit/Write imminent), 3-profile cap, heuristic directory-name fallback for no-frontmatter profiles, end-of-session warning (not mid-task). Files to read: build/AGENTS.md full file (especially lines 30-40 [Expertise] and 56-65 [Context Stack]). Files to write: build/AGENTS.md.",
+      "acceptanceCriteria": [
+        "grep 'auto_load' build/AGENTS.md returns at least 7 lines (umbrella + 6 sub-keys)",
+        "grep 'trigger:' build/AGENTS.md returns a line containing 'target file paths' and 'Edit/Write'",
+        "grep 'fallback:' build/AGENTS.md returns a line referencing 'directory name' and 'end-of-session'",
+        "grep 'cap:' build/AGENTS.md returns a line containing '3 profile bodies'",
+        "[Expertise]|when: line no longer contains 'subagent context' alone",
+        "[Context Stack]|layer_4: line mentions main agent AND subagents",
+        "Behavioral walkthrough documented in working-memory.md covers: scope-match-loads, scope-no-match-skip, anchor-heuristic-load with end-of-session warning, 5-matches-cap-to-3 with note",
+        "AGENTS.md still parses as the same compact pipe-delimited format — no broken keys"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    },
+    {
+      "id": "task-2-hotfix-routing",
+      "title": "hotfix.md — Phase 3 routing decision + Phase 4 PROFILE.md write",
+      "description": "Update Phase 1 step 2 to reference AGENTS.md auto_load. Add a routing-decision question to the Phase 3 reviewer prompt using wording from post-mortem.md lines 93-98. Split Phase 4 step 1 into 'apply Phase 3 routing' (PROFILE.md or LEARNINGS.md based on Phase 3 output, bumping last_validated:) and 'optional secondary route' (both can fire). Add a **PROFILE.md**: line to the Phase 4 report template alongside the existing **LEARNINGS.md**: line. Files to read: commands/hotfix.md full file (especially Phases 1, 3, 4) and commands/post-mortem.md lines 91-112 for the routing test wording. Files to write: commands/hotfix.md. Blocked by task-1.",
+      "acceptanceCriteria": [
+        "Phase 3 reviewer prompt contains the routing question referencing post-mortem.md lines 93-98",
+        "Phase 3 reviewer output line **Profile routing**: is documented in the reviewer prompt",
+        "Phase 4 step 1 says 'Apply Phase 3 routing decision' — no re-judging in Phase 4",
+        "Phase 4 report template has BOTH **PROFILE.md**: and **LEARNINGS.md**: lines",
+        "grep 'last_validated' commands/hotfix.md returns at least one line, in the Phase 4 routing block",
+        "Phase 1 step 2 references AGENTS.md auto_load",
+        "No prior LEARNINGS.md behavior is removed — routing is additive"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    },
+    {
+      "id": "task-3-pre-mortem-step-0",
+      "title": "pre-mortem.md — Step 0 path extraction + auto_load",
+      "description": "Insert a new Step 0 (Load Relevant Expertise) before Step 1 (Work Through Risk Categories). Step 0a extracts **File:** values from plan tasks; Step 0b passes them to AGENTS.md auto_load. Update risk categories 6 (Scope drift), 7 (Integration risk), and 8 (Documentation debt) to reference loaded PROFILE.md invariants. Category 8 should mention last_validated: bump. Files to read: commands/pre-mortem.md full file (especially lines 19-53). Files to write: commands/pre-mortem.md. Blocked by task-1.",
+      "acceptanceCriteria": [
+        "pre-mortem.md has a Step 0 or ### 0. section before Step 1 / ### 1.",
+        "Step 0 has explicitly numbered sub-steps 0a (path extraction) and 0b (call auto_load)",
+        "Step 0b references AGENTS.md auto_load (not redefining the procedure)",
+        "At least one of risk categories 6, 7, or 8 explicitly references 'loaded profiles' or 'PROFILE.md invariants' or 'PROFILE.md Architecture Map'",
+        "Risk category 8 mentions last_validated: bump",
+        "grep 'auto_load' commands/pre-mortem.md returns at least one line"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    },
+    {
+      "id": "task-4-plan-to-prd-load",
+      "title": "plan-to-prd.md — load profiles for PM step",
+      "description": "Insert a new 'Load Relevant Expertise' step between current Step 1 (Derive Feature Slug) and Step 2 (Create prd.md). Renumber subsequent steps. Add a sub-bullet to the PRD-creation step about profile-respecting tasks. Files to read: commands/plan-to-prd.md full file. Files to write: commands/plan-to-prd.md. Blocked by task-1.",
+      "acceptanceCriteria": [
+        "plan-to-prd.md has an explicit 'Load Relevant Expertise' step BEFORE the PRD creation step",
+        "The new step has sub-steps for path extraction and auto_load call",
+        "grep 'auto_load' commands/plan-to-prd.md returns at least one line",
+        "The PRD-creation step references loaded PROFILE.md / loaded profiles",
+        "Step numbering remains coherent — no duplicate numbers, no gaps"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    },
+    {
+      "id": "task-5-review-quick-mode",
+      "title": "review.md — unlock Step 2 and Step 3 for Quick mode",
+      "description": "Replace Step 2 'Load Expertise Profiles (Full Review only)' with explicit Quick mode (auto_load, scope-matched only) and Full Review (auto_load + adjacent profiles) branches. Replace Step 3 'Scan LEARNINGS.md (Full Review only)' with explicit Quick mode (target-path dirs only) and Full Review (target-path + adjacent dirs) branches. Files to read: commands/review.md full file (especially lines 41-49). Files to write: commands/review.md. Blocked by task-1.",
+      "acceptanceCriteria": [
+        "Step 2 header no longer says '(Full Review only)'",
+        "Step 3 header no longer says '(Full Review only)'",
+        "Both Step 2 and Step 3 have explicit 'Quick mode:' and 'Full Review:' branches",
+        "Step 2 Quick branch references AGENTS.md auto_load",
+        "Full Review branches add 'adjacent' / 'Architecture Map' / cross-domain context language",
+        "grep 'Quick mode:' commands/review.md returns at least 2 lines"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    },
+    {
+      "id": "task-6-template-scan-on-start",
+      "title": "project-claude.md template — scan-on-start instruction",
+      "description": "Add a scan-on-start instruction paragraph at the top of the 'Domain Expertise' section pointing at AGENTS.md auto_load. The actual auto-load behavior is driven by AGENTS.md (which all projects read via the global CLAUDE.md); this template addition is reinforcement so new projects' CLAUDE.md surfaces the loading model. Files to read: templates/project-claude.md (especially lines 71-80). Files to write: templates/project-claude.md. Can run in parallel with task-2 through task-5 since it touches a different file — but per memory guidance, run sequentially anyway.",
+      "acceptanceCriteria": [
+        "templates/project-claude.md 'Domain Expertise' section starts with a paragraph pointing at ~/.claude/build/AGENTS.md auto_load",
+        "grep 'auto_load' templates/project-claude.md returns at least one line",
+        "The added paragraph mentions both 'scope:' frontmatter and 'files you're about to touch'",
+        "Existing profile-list example bullets (api:, models:) remain intact below the new paragraph"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-06-17T00:00:00Z",
+    "totalTasks": 6,
+    "completedTasks": 0,
+    "failedTasks": 0
+  }
+}

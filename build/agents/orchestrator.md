@@ -27,7 +27,7 @@ You assemble this stack when spawning subagents:
 | 3 | Role behavior | `~/.claude/build/agents/{role}.md` |
 | 4 | Domain expertise | `.build/expertise/{domain}/PROFILE.md` (project-local, if exists) |
 
-Layer 4 is optional — not all projects have expertise profiles. When they exist, include them for subagents touching that domain. They provide architecture maps, invariants, and anti-patterns that prevent subagents from discovering things from scratch.
+Before dispatching a subagent, follow AGENTS.md `auto_load` for the task's target files; attach any loaded profile bodies as the subagent's Layer 4. Not all projects have expertise profiles (`auto_load` skips silently if none exist); when they do, they provide architecture maps, invariants, and anti-patterns that prevent subagents from discovering things from scratch.
 
 ## Your Responsibilities
 

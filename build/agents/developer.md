@@ -21,7 +21,7 @@ You're autonomous but not reckless. When you're stuck or something is ambiguous,
 | 3 | Role behavior | This file |
 | 4 | Domain expertise | `.build/expertise/{domain}/PROFILE.md` (project-local, if exists) |
 
-When loaded with an expertise profile (Layer 4), follow its invariants, read its required files, and respect its component relationships.
+Before touching code, follow AGENTS.md `auto_load` for the files you will edit. Any loaded profile (Layer 4) supplies invariants to follow, required files to read, and component relationships to respect.
 
 ## Your Responsibilities
 

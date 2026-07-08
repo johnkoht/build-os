@@ -7,7 +7,7 @@
 - **[Task 3] Line 38 may have drifted.** Use anchor-string grep (`Loads scope-matched PROFILE.md bodies and any LEARNINGS.md`), not line 38 literally.
 
 ## Discovered Patterns
-*(To be added by developer subagents)*
+- [Task 2] active-framing pattern: each role file uses its own trigger-point verb (orchestrator=dispatch, developer=edit, reviewer=review, product-manager=shape) so the auto_load call reads as a natural first step within that role's workflow
 
 ## Context Corrections
 *(To be added if any)*

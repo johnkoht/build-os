@@ -21,7 +21,7 @@ You protect the codebase through thorough, evidence-based review. You check that
 | 3 | Role behavior | This file |
 | 4 | Domain expertise | `.build/expertise/{domain}/PROFILE.md` (project-local, if exists) |
 
-When loaded with an expertise profile (Layer 4), use it to verify the developer's changes respect domain invariants and architectural patterns.
+Before reviewing, follow AGENTS.md `auto_load` for the diff's touched files. Any loaded profile (Layer 4) is the reference for verifying the developer's changes respect domain invariants and architectural patterns.
 
 ## Your Roles
 

@@ -1,0 +1,59 @@
+{
+  "name": "profile-auto-load-followups",
+  "branchName": "feature/profile-auto-load-followups",
+  "goal": "Close 3 eng-lead follow-ups from profile-auto-load: wire /build to call auto_load, flip 4 agent role files to active self-trigger framing, fix hotfix.md LEARNINGS.md mis-attribution.",
+  "userStories": [
+    {
+      "id": "task-1-build-auto-load-wiring",
+      "title": "build.md — Phase 2 Step 1 auto_load call + line 99 template",
+      "description": "Add new first bullet to Phase 2 Step 1 (Prepare Context) that calls AGENTS.md auto_load for the task's target files. Replace developer subagent prompt template line 99 passive 'if available' bracket with 'loaded via auto_load' reference. BOTH edits in ONE commit (atomicity mitigation, pre-mortem Risk 2).",
+      "acceptanceCriteria": [
+        "grep -c 'auto_load' commands/build.md returns ≥ 2",
+        "grep 'if available.*expertise' commands/build.md returns 0 lines",
+        "grep 'loaded via auto_load' commands/build.md returns 1 line",
+        "Phase 2 Step 1 Prepare Context list has **Follow AGENTS.md `auto_load` procedure** as first bullet",
+        "git log -1 --stat commands/build.md shows both edits in the SAME commit"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    },
+    {
+      "id": "task-2-agent-files-active-framing",
+      "title": "Agent role files — active auto_load self-trigger framing",
+      "description": "Rewrite the passive 'When loaded with an expertise profile' / 'Layer 4 is optional' lines in 4 agent files (orchestrator:30, developer:24, reviewer:24, product-manager:25) to active-voice self-trigger. Exact old→new strings prescribed in PRD (pre-mortem Risk 1 mitigation). Verify with 8 grep checks (Risk 4 mitigation). One commit for all 4 files.",
+      "acceptanceCriteria": [
+        "grep 'When loaded with an expertise' build/agents/*.md returns 0 lines",
+        "grep 'Layer 4 is optional' build/agents/orchestrator.md returns 0 lines",
+        "grep -l 'auto_load' build/agents/orchestrator.md build/agents/developer.md build/agents/reviewer.md build/agents/product-manager.md returns 4 lines",
+        "grep 'Before dispatching a subagent' build/agents/orchestrator.md returns 1 line",
+        "grep 'Before touching code' build/agents/developer.md returns 1 line",
+        "grep 'Before reviewing' build/agents/reviewer.md returns 1 line",
+        "grep 'Before shaping technical scope' build/agents/product-manager.md returns 1 line",
+        "git diff --stat build/agents/ shows ≤ 4 line changes per file (surgical, no scope creep)"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    },
+    {
+      "id": "task-3-hotfix-precision",
+      "title": "hotfix.md — split parenthetical, correct LEARNINGS.md attribution",
+      "description": "Split the parenthetical after auto_load reference: auto_load loads profile bodies only; LEARNINGS.md is a separate read step. Use anchor-string grep for target detection, NOT line numbers (pre-mortem Risk 3 mitigation — parent PRD's edits may have shifted line 38).",
+      "acceptanceCriteria": [
+        "grep 'Loads scope-matched PROFILE.md bodies and any LEARNINGS.md' commands/hotfix.md returns 0 lines",
+        "grep 'Loads scope-matched PROFILE.md bodies. Separately, read any LEARNINGS.md' commands/hotfix.md returns 1 line",
+        "git diff --stat commands/hotfix.md shows ~2 line changes (surgical)"
+      ],
+      "status": "pending",
+      "passes": false,
+      "attemptCount": 0
+    }
+  ],
+  "metadata": {
+    "createdAt": "2026-07-08T00:00:00Z",
+    "totalTasks": 3,
+    "completedTasks": 0,
+    "failedTasks": 0
+  }
+}

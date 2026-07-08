@@ -1,8 +1,8 @@
 ---
-status: draft
-has_pre_mortem: false
+status: approved
+has_pre_mortem: true
 has_review: false
-has_prd: false
+has_prd: true
 parent_prd: profile-auto-load
 ---
 

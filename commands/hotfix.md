@@ -35,7 +35,7 @@ Before writing any code, understand the problem deeply.
    - What are the reproduction steps?
 
 2. **Load relevant expertise**
-   - Resolve affected files from the bug report, then follow the `auto_load` procedure in `~/.claude/build/AGENTS.md` `[Expertise]` with those paths as targets. (Loads scope-matched PROFILE.md bodies and any LEARNINGS.md in affected directories.)
+   - Resolve affected files from the bug report, then follow the `auto_load` procedure in `~/.claude/build/AGENTS.md` `[Expertise]` with those paths as targets. Loads scope-matched PROFILE.md bodies. Separately, read any LEARNINGS.md in affected directories.
 
 3. **Identify**:
    - Root cause hypothesis

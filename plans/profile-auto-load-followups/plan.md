@@ -12,12 +12,11 @@ parent_prd: profile-auto-load
 
 `profile-auto-load` shipped (commits `72af7a6..aa08247`, merged 2026-06-17). It wired `auto_load` into `[Expertise]`, `/hotfix`, `/pre-mortem`, `/plan-to-prd`, `/review`, and the new-project template.
 
-The eng lead pre-merge review approved the merge but flagged four gaps that "should not rot past the next anchor work session":
+The eng lead pre-merge review approved the merge but flagged four gaps. **Item 4 (anchor retrofit) already done** — verified 2026-07-08: anchor's 4 profiles have `scope:` and `last_validated: 2026-06-16` frontmatter. Retrofit ran the same day this PRD merged. Three remaining gaps:
 
 1. **`/build` orchestrator path still uses old manual model.** `commands/build.md:99` says `[domain expertise profile if available: .build/expertise/{domain}/PROFILE.md]` — passive "if available" inclusion with no `auto_load` call. `/build` is the highest-frequency execution path (invoked by `/ship`, direct PRD builds). The Orchestrator dispatches the developer without triggering the new procedure.
 2. **Agent role files use passive framing.** `build/agents/orchestrator.md:30`, `developer.md:24`, `reviewer.md:24` all say "when loaded with an expertise profile" — as if profiles arrive by magic. After profile-auto-load, each agent is expected to self-trigger. The role docs still describe the old model.
 3. **`commands/hotfix.md:38` parenthetical mis-attribution.** "Loads scope-matched PROFILE.md bodies **and any LEARNINGS.md in affected directories**" — the LEARNINGS.md part is not what `auto_load` does. Minor precision fix.
-4. **Anchor `/build-os-retrofit` run needed.** Anchor's 4 profiles are still stale (May 11) and lack frontmatter. Without retrofit, the `auto_load` heuristic fallback fires end-of-session ⚠️ every anchor session but the profiles never get scope. This is the original motivating problem — not fixed until anchor is retrofitted.
 
 ## Scope
 
@@ -83,16 +82,9 @@ Track this in the anchor project's own memory / backlog rather than as a code ch
 - `commands/hotfix.md` line ~38 no longer says "and any LEARNINGS.md in affected directories" inside the `auto_load` parenthetical.
 - LEARNINGS.md read is called out as a distinct step.
 
-### Task 4: Anchor retrofit — process checklist
-**File:** none (this repo); action in `~/code/anchor`
+### ~~Task 4: Anchor retrofit — process checklist~~ **[DONE 2026-06-16]**
 
-- Success criterion: `~/code/anchor/.build/expertise/*/PROFILE.md` all have `scope:` and `last_validated:` frontmatter.
-- Verify by: `grep -l "scope:" ~/code/anchor/.build/expertise/*/PROFILE.md | wc -l` returns 4.
-
-**AC:**
-- All 4 anchor profiles have `scope:` frontmatter.
-- All 4 anchor profiles have `last_validated:` frontmatter dated ≥ 2026-06-17 (retrofit date).
-- One anchor session confirms zero end-of-session ⚠️ from `auto_load` fallback (profiles now scoped).
+Verified 2026-07-08. All 4 anchor profiles have `scope:` and `last_validated: 2026-06-16` frontmatter. Retrofit ran the same day this PRD merged.
 
 ## Out of Scope
 
@@ -105,4 +97,3 @@ Track this in the anchor project's own memory / backlog rather than as a code ch
 1. `/build` execution: dispatching a task with target files matching a profile's scope loads that profile into the developer's prompt (verified by mental trace of build.md Phase 2 Step 1).
 2. All three agent role files (`orchestrator`, `developer`, `reviewer`) describe self-triggering `auto_load` rather than passive receipt.
 3. `commands/hotfix.md:38` accurately describes what `auto_load` does vs what LEARNINGS.md reads separately.
-4. Anchor's 4 profiles have frontmatter; one anchor session runs without the fallback warning.

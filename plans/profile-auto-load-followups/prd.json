@@ -14,9 +14,10 @@
         "Phase 2 Step 1 Prepare Context list has **Follow AGENTS.md `auto_load` procedure** as first bullet",
         "git log -1 --stat commands/build.md shows both edits in the SAME commit"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "b09095f"
     },
     {
       "id": "task-2-agent-files-active-framing",
@@ -32,9 +33,10 @@
         "grep 'Before shaping technical scope' build/agents/product-manager.md returns 1 line",
         "git diff --stat build/agents/ shows ≤ 4 line changes per file (surgical, no scope creep)"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "aa73107"
     },
     {
       "id": "task-3-hotfix-precision",
@@ -45,15 +47,16 @@
         "grep 'Loads scope-matched PROFILE.md bodies. Separately, read any LEARNINGS.md' commands/hotfix.md returns 1 line",
         "git diff --stat commands/hotfix.md shows ~2 line changes (surgical)"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "70018f3"
     }
   ],
   "metadata": {
     "createdAt": "2026-07-08T00:00:00Z",
     "totalTasks": 3,
-    "completedTasks": 0,
+    "completedTasks": 3,
     "failedTasks": 0
   }
 }

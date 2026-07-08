@@ -71,6 +71,7 @@ For each pending task (in dependency order):
 
 ### Step 1: Prepare Context (Orchestrator)
 
+- **Follow AGENTS.md `auto_load` procedure** for the task's target files. Attach loaded PROFILE.md bodies to the developer prompt below (Layer 4).
 - Read completed tasks: what's been built, patterns established
 - Identify files the subagent should read first (exact paths)
 - Check which pre-mortem mitigations apply
@@ -96,7 +97,7 @@ After completing, add entries to relevant sections. If nothing new: write NOTHIN
 
 **Context - Read These Files First**:
 1. `plans/{slug}/working-memory.md` — cross-task knowledge
-2. [domain expertise profile if available: .build/expertise/{domain}/PROFILE.md]
+2. [domain expertise profiles loaded via auto_load — attached above as Layer 4]
 3. [specific files relevant to this task] — [why]
 
 **Important Patterns**:

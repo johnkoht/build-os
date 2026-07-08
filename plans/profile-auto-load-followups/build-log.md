@@ -8,22 +8,29 @@
 
 - [x] Phase 0: Initialize build log
 - [x] Phase 1.1: Save plan (status: approved)
-- [ ] Phase 1.2: Pre-mortem
-- [ ] Phase 1.3: Cross-model review
-- [ ] Phase 2.1: Memory review
-- [ ] Phase 2.2: Convert to PRD
-- [ ] Phase 2.3: Commit artifacts
-- [ ] Phase 3.1: Create worktree
-- [ ] Phase 3.2: Switch to worktree
-- [ ] Phase 4.1: Execute PRD
-- [ ] Phase 4.2: Final review
-- [ ] Phase 5.1: Memory entry
-- [ ] Phase 5.2: LEARNINGS.md
-- [ ] Phase 5.3: Commit implementation
-- [ ] Phase 5.4: /wrap verification
-- [ ] Phase 5.5: Ship report
-- [ ] Phase 5.6: Merge gate
-- [ ] Phase 6.1: Remove worktree
+- [x] Phase 1.2: Pre-mortem (5 risks, 0 CRITICAL, all folded into task ACs)
+- [x] Phase 1.3: Cross-model review (skipped — small scope; noted as learning)
+- [x] Phase 2.1: Memory review (parent PRD's learnings applied)
+- [x] Phase 2.2: Convert to PRD (3 tasks with verbatim old→new strings)
+- [x] Phase 2.3: Commit artifacts (b517fd3)
+- [x] Phase 3.1: Create worktree
+- [x] Phase 3.2: Switch to worktree
+- [x] Phase 4.1: Execute PRD (3/3, 0 iterations)
+- [x] Phase 4.2: Final review (holistic — READY)
+- [x] Phase 5.1: Memory entry (2026-07-08_profile-auto-load-followups-learnings.md)
+- [x] Phase 5.2: LEARNINGS.md (N/A — meta-repo)
+- [x] Phase 5.3: Commit implementation (per-task)
+- [x] Phase 5.4: /wrap verification (all ✅)
+- [x] Phase 5.5: Ship report (below)
+- [x] Phase 5.6: Merge gate (fast-forward main 342d88a → 0d638ca; pushed)
+- [x] Phase 6.1: Remove worktree + branch (both cleaned)
+
+## Ship Report
+
+- **Tasks:** 3/3 complete, 0 iterations, first-attempt across all developers
+- **Commits:** 6 (plan artifacts, 3 feature, prd status, memory entry)
+- **Files touched:** commands/build.md, commands/hotfix.md, build/agents/{orchestrator,developer,reviewer,product-manager}.md + memory
+- **Follow-ups:** align commands/review.md active-framing register next time it's touched (not urgent — different file class than agent role docs)
 
 ## Notes
 

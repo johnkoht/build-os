@@ -398,14 +398,12 @@ def cmd_sync_project(force=False) -> int:
         target_file = target_dir / f"{name}.md"
 
         if project_model == global_model:
-            # no divergence — remove any previously-materialized file
-            if target_file.exists():
-                if _is_managed(target_file):
-                    if _managed_file_hand_edited(target_file, meta, global_model, force):
-                        warning_blocked = True
-                        continue
-                    target_file.unlink()
-                    deletes += 1
+            # no divergence — remove any previously-materialized file.
+            # Files carrying the managed: marker are ours to delete; hand-written
+            # files (no marker) are left alone regardless.
+            if target_file.exists() and _is_managed(target_file):
+                target_file.unlink()
+                deletes += 1
             continue
 
         # divergence: materialize

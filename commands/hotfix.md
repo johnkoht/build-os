@@ -6,7 +6,7 @@ triggers:
   - fix
   - broken
   - not working
-  - "fix this"
+  - fix this
   - regression
 ---
 

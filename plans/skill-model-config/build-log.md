@@ -12,11 +12,11 @@
 - [x] Phase 1.3: Cross-model review (Approve with suggestions; user chose sync-target option A; suggestions folded into plan.md + pre-mortem.md)
 - [x] Phase 2.1: Memory review (5 bullets for PRD prompt below)
 - [x] Phase 2.2: Convert to PRD (8 tasks, dependency DAG in prd.json, working-memory seeded)
-- [ ] Phase 2.3: Commit artifacts
-- [ ] Phase 3.1: Create worktree
-- [ ] Phase 3.2: Switch to worktree
-- [ ] Phase 4.1: Execute PRD
-- [ ] Phase 4.2: Final review
+- [x] Phase 2.3: Commit artifacts (d9f14cd on main)
+- [x] Phase 3.1: Create worktree (../build-os-worktrees/skill-model-config, feature/skill-model-config)
+- [x] Phase 3.2: Switch to worktree (all subsequent ops use absolute worktree paths)
+- [x] Phase 4.1: Execute PRD (8/8 tasks, 1 mid-task fix commit for removal path)
+- [x] Phase 4.2: Final review (holistic — READY; 16 files changed, 754+/2- LOC)
 - [ ] Phase 5.1: Memory entry
 - [ ] Phase 5.2: LEARNINGS.md
 - [ ] Phase 5.3: Commit implementation
@@ -28,6 +28,8 @@
 ## Session Notes
 
 **Session 1** (2026-07-08): Kicked off after conversational plan approval. Plan drafted in /Users/johnkoht/.claude/plans/warm-strolling-robin.md, moving into repo with descriptive slug.
+
+**Manual verification pending at /wrap phase**: see `plans/skill-model-config/verification-manual.md` — two steps (M1 live-session frontmatter model, M2 project retrofit) require human-in-the-loop.
 
 ## Memory Synthesis for PRD Prompt
 

@@ -1,7 +1,7 @@
 {
   "name": "skill-model-config",
   "branchName": "feature/skill-model-config",
-  "goal": "Ship a user-configurable model-per-skill system for build-os with layered global (~/.claude/build/config.yaml) → project (<project>/.build/config.yaml) overrides. Introduces bin/build-config (Python 3 CLI over pyyaml), per-skill bucket: frontmatter, and a symlink break-out on first global sync so ~/.claude/commands/ becomes a materialized copy and the source repo stays upstream-clean.",
+  "goal": "Ship a user-configurable model-per-skill system for build-os with layered global (~/.claude/build/config.yaml) \u2192 project (<project>/.build/config.yaml) overrides. Introduces bin/build-config (Python 3 CLI over pyyaml), per-skill bucket: frontmatter, and a symlink break-out on first global sync so ~/.claude/commands/ becomes a materialized copy and the source repo stays upstream-clean.",
   "userStories": [
     {
       "id": "task-1",
@@ -18,12 +18,13 @@
         "AC 1.8: Two consecutive sync --global runs on unchanged config: second run writes zero files (mtime unchanged via stat)",
         "AC 1.9: With default_model: opuss, sync --global exits non-zero (without --force), prints 'unknown model \"opuss\" ... did you mean \"opus\"?'",
         "AC 1.10: BUILD_OS_CLAUDE_HOME and BUILD_OS_REPO env vars redirect all filesystem operations to test prefixes",
-        "AC 1.11: bin/build-config show ship prints one line: 'ship → <model> (source: <layer-path>)'",
+        "AC 1.11: bin/build-config show ship prints one line: 'ship \u2192 <model> (source: <layer-path>)'",
         "AC 1.12: Hand-edit a materialized managed file, re-sync warns and skips (non-zero exit); --force overwrites"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "401ad53a0a56b552a9a864ad702f5c1fd4096b62"
     },
     {
       "id": "task-2",
@@ -32,12 +33,13 @@
       "acceptanceCriteria": [
         "AC 2.1: File is valid YAML (python3 -c 'import yaml; yaml.safe_load(open(...))' exits 0)",
         "AC 2.2: bin/build-config init --global copies verbatim; subsequent sync --global writes zero files",
-        "AC 2.3: Contains a rationale comment per bucket (grep '# planning', '# execution', '# mechanical' each returns ≥ 1)",
+        "AC 2.3: Contains a rationale comment per bucket (grep '# planning', '# execution', '# mechanical' each returns \u2265 1)",
         "AC 2.4: Contains an example each of '<skill>: <model>' and '<skill>: inherit'"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "51c8160ed85035bb2feaea818756ce4ea1d6c0e3"
     },
     {
       "id": "task-3",
@@ -48,11 +50,12 @@
         "AC 3.2: bucket: planning present in pre-mortem.md, plan-to-prd.md, review.md, post-mortem.md (4 per-file greps, each returns 1)",
         "AC 3.3: bucket: mechanical present in wrap.md (1 grep, returns 1)",
         "AC 3.4: triggers: YAML list intact in hotfix.md and build-os-retrofit.md (pyyaml parse asserts triggers is non-empty list)",
-        "AC 3.5: git diff commands/*.md shows only added bucket: lines in frontmatter — zero body changes"
+        "AC 3.5: git diff commands/*.md shows only added bucket: lines in frontmatter \u2014 zero body changes"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "eca9179d06bb85cc9db73251f2221150aadae1e3"
     },
     {
       "id": "task-4",
@@ -64,9 +67,10 @@
         "AC 4.3: [Skills] line mentions buckets: grep '^\\[Skills\\]' build/AGENTS.md | grep -c 'bucket:' returns 1",
         "AC 4.4: git diff build/AGENTS.md shows only additions (no deletions to existing content)"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "a99f3704034ac7b353d7bb394b46a49f8e02013b"
     },
     {
       "id": "task-5",
@@ -76,9 +80,10 @@
         "AC 5.1: grep -c '^build/config\\.yaml$' .gitignore returns 1",
         "AC 5.2: Both original patterns still present (grep for collaboration.md and build-standards.local.md each returns 1)"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "adb664b8007f43152e87b5aa742d71910bcc96fc"
     },
     {
       "id": "task-6",
@@ -90,23 +95,25 @@
         "AC 6.3: bash -n install.sh exits 0",
         "AC 6.4: All existing ln -sf lines unchanged (git diff shows only additions at end of file)"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "260e7ded00ba4d7e25d5580e0645a19ee40fbe07"
     },
     {
       "id": "task-7",
       "title": "Scaffold .build/config.yaml in bin/new-project",
       "description": "Extend bin/new-project's .build/ scaffolding to copy build/config.yaml.example into new-project/.build/config.yaml with every non-comment line prefixed with '# '. Print success hint.",
       "acceptanceCriteria": [
-        "AC 7.1: grep -c 'config.yaml.example' bin/new-project returns ≥ 1",
+        "AC 7.1: grep -c 'config.yaml.example' bin/new-project returns \u2265 1",
         "AC 7.2: bash -n bin/new-project exits 0",
         "AC 7.3: Running bin/new-project against scratch dir produces .build/config.yaml where every non-blank line begins with '#'",
         "AC 7.4: Existing expertise/ and agents/ scaffolding unchanged"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "56d0b1f6c16c6c1aa178688e5699093e76c43011"
     },
     {
       "id": "task-8",
@@ -115,27 +122,39 @@
       "acceptanceCriteria": [
         "AC 8.1: File exists at plans/skill-model-config/verification-manual.md",
         "AC 8.2: Both M1 and M2 sections present as markdown checklists with actionable steps",
-        "AC 8.3: Referenced from build-log.md § Session Notes as 'manual verification pending at /wrap phase'"
+        "AC 8.3: Referenced from build-log.md \u00a7 Session Notes as 'manual verification pending at /wrap phase'"
       ],
-      "status": "pending",
-      "passes": false,
-      "attemptCount": 0
+      "status": "complete",
+      "passes": true,
+      "attemptCount": 1,
+      "commitSha": "pending-wrap-commit"
     }
   ],
   "metadata": {
     "createdAt": "2026-07-09T01:33:37Z",
     "totalTasks": 8,
-    "completedTasks": 0,
+    "completedTasks": 8,
     "failedTasks": 0,
     "dependencies": {
       "task-1": [],
-      "task-2": ["task-1"],
+      "task-2": [
+        "task-1"
+      ],
       "task-3": [],
-      "task-4": ["task-1"],
+      "task-4": [
+        "task-1"
+      ],
       "task-5": [],
-      "task-6": ["task-1", "task-2"],
-      "task-7": ["task-2"],
-      "task-8": ["task-1"]
+      "task-6": [
+        "task-1",
+        "task-2"
+      ],
+      "task-7": [
+        "task-2"
+      ],
+      "task-8": [
+        "task-1"
+      ]
     }
   }
 }

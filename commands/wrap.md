@@ -1,6 +1,7 @@
 ---
 name: wrap
 description: Pre-merge verification checklist. Quality gates, working tree, memory entry, LEARNINGS.md.
+bucket: mechanical
 ---
 
 # Wrap

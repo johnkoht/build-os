@@ -1,6 +1,7 @@
 ---
 name: plan-to-prd
 description: Convert an approved plan into prd.md + prd.json for autonomous execution.
+bucket: planning
 ---
 
 # Plan to PRD

@@ -1,6 +1,7 @@
 ---
 name: new-project
 description: Scaffold a new project with build-os structure (CLAUDE.md, plans/, memory/, .build/). Use when you're already inside Claude Code.
+bucket: execution
 ---
 
 # New Project

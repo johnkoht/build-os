@@ -1,6 +1,7 @@
 ---
 name: post-mortem
 description: Structured reflection after PRD completion. Extracts learnings, creates memory entry, synthesizes collaboration patterns.
+bucket: planning
 ---
 
 # Post-Mortem

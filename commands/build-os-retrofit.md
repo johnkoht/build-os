@@ -1,6 +1,7 @@
 ---
 name: build-os-retrofit
 description: Audit an existing project for build-os gaps and bootstrap missing pieces — expertise profiles, memory/, CLAUDE.md wiring.
+bucket: execution
 triggers:
   - retrofit this project
   - my project missing profiles

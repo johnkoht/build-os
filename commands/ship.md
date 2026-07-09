@@ -1,6 +1,7 @@
 ---
 name: ship
 description: Full plan-to-merge workflow. Pre-mortem → review → PRD → worktree → build → wrap → merge. Say /ship after approving a plan.
+bucket: execution
 ---
 
 # Ship

@@ -1,6 +1,7 @@
 ---
 name: pre-mortem
 description: Risk analysis before multi-step work. Identifies risks and creates actionable mitigations. Run before approving medium+ plans.
+bucket: planning
 ---
 
 # Pre-Mortem

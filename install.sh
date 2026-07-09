@@ -70,3 +70,8 @@ fi
 echo ""
 echo "Slash commands: /ship /build /hotfix /review /pre-mortem /plan-to-prd /post-mortem /wrap /build-os-retrofit /new-project"
 echo "CLI command:    new-project <name> [--lang typescript|ruby|python|go]"
+
+echo ""
+echo "→ Optional: run \`bin/build-config init --global\` to configure per-skill models."
+echo "  First sync replaces the ~/.claude/commands symlink with a real directory."
+echo "  Requires pyyaml — bin/build-config prints install instructions if missing."

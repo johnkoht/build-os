@@ -1,6 +1,7 @@
 ---
 name: build
 description: Execute an existing PRD autonomously with Orchestrator + Reviewer. Use when you have a PRD and worktree already set up.
+bucket: execution
 ---
 
 # Build (Execute PRD)

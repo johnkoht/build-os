@@ -184,6 +184,14 @@ Reference them in CLAUDE.md under [Project Agents].
 EOF
 ok "Created .build/README.md"
 
+# .build/config.yaml — per-skill model config, seeded from example with every
+# non-comment line commented out. Uncomment fields to override the global config.
+if [[ -f "$BUILD_OS/build/config.yaml.example" ]]; then
+  awk '{ if (NF==0 || $1 ~ /^#/) print; else print "# " $0 }' \
+    "$BUILD_OS/build/config.yaml.example" > .build/config.yaml
+  ok "Created .build/config.yaml (all commented out — uncomment fields to override global model config)"
+fi
+
 # .gitignore
 if [[ ! -f .gitignore ]]; then
   cat > .gitignore <<EOF

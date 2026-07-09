@@ -59,6 +59,15 @@ else
   echo "✓ linked new-project → ~/.local/bin/new-project"
 fi
 
+# build-config CLI → ~/.local/bin/build-config
+chmod +x "$REPO/bin/build-config"
+if [ -L "$LOCAL_BIN/build-config" ] && [ "$(readlink "$LOCAL_BIN/build-config")" = "$REPO/bin/build-config" ]; then
+  echo "✓ build-config CLI already linked"
+else
+  ln -sf "$REPO/bin/build-config" "$LOCAL_BIN/build-config"
+  echo "✓ linked build-config → ~/.local/bin/build-config"
+fi
+
 # Ensure ~/.local/bin is on PATH
 if [[ ":$PATH:" != *":$LOCAL_BIN:"* ]]; then
   echo ""
@@ -69,4 +78,10 @@ fi
 
 echo ""
 echo "Slash commands: /ship /build /hotfix /review /pre-mortem /plan-to-prd /post-mortem /wrap /build-os-retrofit /new-project"
-echo "CLI command:    new-project <name> [--lang typescript|ruby|python|go]"
+echo "CLI commands:   new-project <name> [--lang typescript|ruby|python|go]"
+echo "                build-config init|sync|show — per-skill model configuration"
+
+echo ""
+echo "→ Optional: run \`build-config init --global\` to configure per-skill models."
+echo "  First sync replaces the ~/.claude/commands symlink with a real directory."
+echo "  Requires pyyaml — build-config prints install instructions if missing."

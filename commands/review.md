@@ -1,6 +1,7 @@
 ---
 name: review
 description: Structured second-opinion review for plans, PRDs, or implementations. Tiered checklists, devil's advocate, actionable feedback.
+bucket: planning
 ---
 
 # Review

@@ -1,0 +1,674 @@
+#!/usr/bin/env python3
+"""bin/build-config — per-skill model configuration for build-os.
+
+Config → skill frontmatter bridge. Reads:
+  ~/.claude/build/config.yaml         (global)
+  <cwd>/.build/config.yaml            (project)
+
+Writes:
+  ~/.claude/commands/*.md             (global sync)
+  <cwd>/.claude/commands/*.md         (project sync — materializes only overrides)
+
+See build/AGENTS.md [Config] for the full precedence chain.
+"""
+
+import argparse
+import difflib
+import os
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+PYYAML_MISSING_MSG = """\
+bin/build-config needs pyyaml. Pick one:
+  pipx install pyyaml
+  python3 -m venv ~/.claude/build/.venv && ~/.claude/build/.venv/bin/pip install pyyaml
+  brew install libyaml && python3 -m pip install --user --break-system-packages pyyaml
+Then re-run.
+"""
+
+try:
+    import yaml
+except ImportError:
+    print(PYYAML_MISSING_MSG, file=sys.stderr)
+    sys.exit(2)
+
+
+KNOWN_MODELS = {"opus", "sonnet", "haiku", "inherit"}
+
+
+class _IndentDumper(yaml.SafeDumper):
+    """Force 2-space indent for list items nested under a mapping.
+
+    pyyaml's default emits list items at the parent's indent level ("- item"
+    with no leading spaces). This dumper indents them ("  - item"), matching
+    the style existing build-os skill files use.
+    """
+
+    def increase_indent(self, flow=False, indentless=False):
+        return super().increase_indent(flow, False)
+
+
+YAML_DUMP_KWARGS = {
+    "Dumper": _IndentDumper,
+    "sort_keys": False,
+    "default_flow_style": False,
+    "allow_unicode": True,
+    "width": 1000,
+}
+
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+
+
+def repo_root() -> Path:
+    env = os.environ.get("BUILD_OS_REPO")
+    if env:
+        return Path(env).resolve()
+    return Path(__file__).resolve().parent.parent
+
+
+def claude_home() -> Path:
+    env = os.environ.get("BUILD_OS_CLAUDE_HOME")
+    if env:
+        return Path(env).resolve()
+    return Path.home() / ".claude"
+
+
+def global_config_path() -> Path:
+    return claude_home() / "build" / "config.yaml"
+
+
+def project_config_path() -> Path:
+    return Path.cwd() / ".build" / "config.yaml"
+
+
+def global_commands_dir() -> Path:
+    return claude_home() / "commands"
+
+
+def project_commands_dir() -> Path:
+    return Path.cwd() / ".claude" / "commands"
+
+
+def example_config_path() -> Path:
+    return repo_root() / "build" / "config.yaml.example"
+
+
+# ---------------------------------------------------------------------------
+# Frontmatter round-trip
+# ---------------------------------------------------------------------------
+
+
+def parse_frontmatter(text: str):
+    """Return (frontmatter_dict, body_str). Body preserves trailing content verbatim."""
+    if not text.startswith("---\n"):
+        raise ValueError("no opening frontmatter delimiter")
+    rest = text[4:]
+    idx = rest.find("\n---\n")
+    if idx == -1:
+        # try trailing "---" without newline
+        if rest.rstrip("\n").endswith("\n---"):
+            idx = rest.rstrip("\n").rfind("\n---")
+            body = ""
+        else:
+            raise ValueError("no closing frontmatter delimiter")
+    else:
+        body = rest[idx + 5 :]
+    fm_text = rest[:idx]
+    fm = yaml.safe_load(fm_text)
+    if fm is None:
+        fm = {}
+    if not isinstance(fm, dict):
+        raise ValueError("frontmatter is not a mapping")
+    return fm, body
+
+
+def serialize(fm: dict, body: str) -> str:
+    fm_text = yaml.dump(fm, **YAML_DUMP_KWARGS)
+    return f"---\n{fm_text}---\n{body}"
+
+
+def insert_after(fm: dict, after_key: str, new_key: str, new_value):
+    """Return a new dict with new_key inserted immediately after after_key.
+
+    If after_key is missing, append. If new_key already exists, update in place.
+    """
+    if new_key in fm:
+        result = {}
+        for k, v in fm.items():
+            result[k] = new_value if k == new_key else v
+        return result
+    if after_key not in fm:
+        return {**fm, new_key: new_value}
+    result = {}
+    for k, v in fm.items():
+        result[k] = v
+        if k == after_key:
+            result[new_key] = new_value
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Config
+# ---------------------------------------------------------------------------
+
+
+def load_yaml_file(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    with open(path) as f:
+        data = yaml.safe_load(f)
+    return data or {}
+
+
+# ---------------------------------------------------------------------------
+# Skill discovery
+# ---------------------------------------------------------------------------
+
+
+def read_skills(source_dir: Path) -> dict:
+    """Return {skill_name: {"path": Path, "bucket": str|None, "fm": dict, "body": str}}."""
+    result = {}
+    if not source_dir.exists():
+        return result
+    for path in sorted(source_dir.glob("*.md")):
+        try:
+            with open(path) as f:
+                fm, body = parse_frontmatter(f.read())
+        except ValueError:
+            continue  # no frontmatter → not a skill
+        result[path.stem] = {
+            "path": path,
+            "bucket": fm.get("bucket"),
+            "fm": fm,
+            "body": body,
+        }
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Resolution
+# ---------------------------------------------------------------------------
+
+
+def resolve_model(name, bucket, global_cfg, project_cfg, scope):
+    """Walk the precedence chain, return (model|None, source_layer)."""
+    global_skills = global_cfg.get("skills") or {}
+    global_task = global_cfg.get("task_models") or {}
+    project_skills = project_cfg.get("skills") or {}
+    project_task = project_cfg.get("task_models") or {}
+
+    chain = []
+    if scope == "project":
+        chain.extend(
+            [
+                (project_skills.get(name), f"project.skills.{name}"),
+                (
+                    project_task.get(bucket) if bucket else None,
+                    f"project.task_models.{bucket}" if bucket else None,
+                ),
+                (project_cfg.get("default_model"), "project.default_model"),
+            ]
+        )
+    chain.extend(
+        [
+            (global_skills.get(name), f"global.skills.{name}"),
+            (
+                global_task.get(bucket) if bucket else None,
+                f"global.task_models.{bucket}" if bucket else None,
+            ),
+            (global_cfg.get("default_model"), "global.default_model"),
+        ]
+    )
+    for value, source in chain:
+        if value is not None:
+            return value, source
+    return None, "(session model)"
+
+
+def validate_model(value, source, force=False):
+    """Emit warning for unknown values. Return True if a blocking warning fired."""
+    if value in KNOWN_MODELS:
+        return False
+    matches = difflib.get_close_matches(value, list(KNOWN_MODELS), n=1, cutoff=0.5)
+    hint = f' — did you mean "{matches[0]}"?' if matches else ""
+    print(f'warning: unknown model "{value}" at {source}{hint}', file=sys.stderr)
+    return not force
+
+
+# ---------------------------------------------------------------------------
+# Symlink break-out
+# ---------------------------------------------------------------------------
+
+
+def maybe_materialize_global_commands():
+    """If ~/.claude/commands is a symlink to $REPO/commands, replace with a real dir.
+
+    Returns True if we materialized in this call.
+    """
+    target = global_commands_dir()
+    expected_link = (repo_root() / "commands").resolve()
+
+    if target.is_symlink():
+        link_target = target.resolve()
+        if link_target != expected_link:
+            print(
+                f"error: {target} is a symlink to unexpected target: {link_target} "
+                f"(expected {expected_link})",
+                file=sys.stderr,
+            )
+            sys.exit(3)
+        tmp = target.parent / (target.name + ".new")
+        if tmp.exists():
+            shutil.rmtree(tmp)
+        # follow the symlink to copy contents, not the link itself
+        shutil.copytree(link_target, tmp)
+        target.unlink()
+        tmp.rename(target)
+        print(
+            f"→ materialized {target} (was symlink to {link_target}). "
+            f"Re-run this after git-pulling build-os."
+        )
+        return True
+    if not target.exists():
+        print(
+            f"error: {target} not found — run install.sh first",
+            file=sys.stderr,
+        )
+        sys.exit(4)
+    return False
+
+
+# ---------------------------------------------------------------------------
+# Write helpers
+# ---------------------------------------------------------------------------
+
+
+def write_if_changed(path: Path, content: str) -> bool:
+    """Write only when bytes differ. Return True if we wrote."""
+    encoded = content.encode("utf-8")
+    if path.exists() and path.read_bytes() == encoded:
+        return False
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(encoded)
+    return True
+
+
+def apply_model_to_frontmatter(fm: dict, model):
+    """Return a new fm dict with model set/removed appropriately."""
+    if model is None or model == "inherit":
+        if "model" in fm:
+            fm = {k: v for k, v in fm.items() if k != "model"}
+        return fm
+    return insert_after(fm, "description", "model", model)
+
+
+# ---------------------------------------------------------------------------
+# Sync — global
+# ---------------------------------------------------------------------------
+
+
+def cmd_sync_global(force=False) -> int:
+    if not global_config_path().exists():
+        print(
+            "no global config found — run bin/build-config init --global to create one"
+        )
+        return 0
+
+    global_cfg = load_yaml_file(global_config_path())
+    project_cfg = {}
+
+    warning_blocked = False
+    maybe_materialize_global_commands()
+
+    source_skills = read_skills(repo_root() / "commands")
+    if not source_skills:
+        print(
+            f"error: no skills found at {repo_root() / 'commands'}",
+            file=sys.stderr,
+        )
+        return 6
+
+    writes = 0
+    target_dir = global_commands_dir()
+    for name, meta in source_skills.items():
+        model, source = resolve_model(
+            name, meta["bucket"], global_cfg, project_cfg, "global"
+        )
+        if model is not None and model != "inherit":
+            if validate_model(model, source, force=force):
+                warning_blocked = True
+
+        target_file = target_dir / f"{name}.md"
+        if not target_file.exists():
+            # rare — materialize copied everything already, but be defensive
+            shutil.copy2(meta["path"], target_file)
+
+        with open(target_file) as f:
+            fm, body = parse_frontmatter(f.read())
+        fm = apply_model_to_frontmatter(fm, model)
+        new_text = serialize(fm, body)
+        if write_if_changed(target_file, new_text):
+            writes += 1
+
+    print(f"sync --global: {writes} file(s) written")
+    return 5 if warning_blocked else 0
+
+
+# ---------------------------------------------------------------------------
+# Sync — project
+# ---------------------------------------------------------------------------
+
+
+def cmd_sync_project(force=False) -> int:
+    if not project_config_path().exists():
+        print(
+            "no project config found — run bin/build-config init --project to create one"
+        )
+        return 0
+
+    global_cfg = load_yaml_file(global_config_path())
+    project_cfg = load_yaml_file(project_config_path())
+
+    warning_blocked = False
+    source_skills = read_skills(repo_root() / "commands")
+    if not source_skills:
+        print(
+            f"error: no skills found at {repo_root() / 'commands'}",
+            file=sys.stderr,
+        )
+        return 6
+
+    target_dir = project_commands_dir()
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    writes = 0
+    deletes = 0
+    for name, meta in source_skills.items():
+        project_model, project_source = resolve_model(
+            name, meta["bucket"], global_cfg, project_cfg, "project"
+        )
+        global_model, _ = resolve_model(
+            name, meta["bucket"], global_cfg, {}, "global"
+        )
+        target_file = target_dir / f"{name}.md"
+
+        if project_model == global_model:
+            # no divergence — remove any previously-materialized file.
+            # Files carrying the managed: marker are ours to delete; hand-written
+            # files (no marker) are left alone regardless.
+            if target_file.exists() and _is_managed(target_file):
+                target_file.unlink()
+                deletes += 1
+            continue
+
+        # divergence: materialize
+        if project_model is not None and project_model != "inherit":
+            if validate_model(project_model, project_source, force=force):
+                warning_blocked = True
+
+        # regenerate expected content
+        expected_text = _build_managed_content(meta, project_model)
+
+        if target_file.exists() and _is_managed(target_file):
+            if _managed_file_hand_edited(target_file, meta, project_model, force):
+                warning_blocked = True
+                continue
+        elif target_file.exists() and not _is_managed(target_file):
+            print(
+                f"warning: {target_file} exists without managed: build-os marker — "
+                f"skipping (would clobber a hand-written command). Delete it first if you want it managed.",
+                file=sys.stderr,
+            )
+            warning_blocked = True
+            continue
+
+        if write_if_changed(target_file, expected_text):
+            writes += 1
+
+    print(f"sync --project: {writes} written, {deletes} removed")
+    return 5 if warning_blocked else 0
+
+
+def _build_managed_content(meta: dict, model) -> str:
+    """Build the canonical managed-file content for a project override."""
+    fm = dict(meta["fm"])
+    # add managed marker after name (or at start if no name)
+    if "name" in fm:
+        fm = insert_after(fm, "name", "managed", "build-os")
+    else:
+        fm = {"managed": "build-os", **fm}
+    fm = apply_model_to_frontmatter(fm, model)
+    body = meta["body"]
+    # prepend the generated-notice comment to the body if not present
+    notice = (
+        "<!-- Generated by bin/build-config. Do not edit — "
+        "edit .build/config.yaml and re-sync. -->\n\n"
+    )
+    if not body.startswith("<!-- Generated by bin/build-config"):
+        body = notice + body
+    return serialize(fm, body)
+
+
+def _is_managed(path: Path) -> bool:
+    try:
+        with open(path) as f:
+            fm, _ = parse_frontmatter(f.read())
+    except ValueError:
+        return False
+    return fm.get("managed") == "build-os"
+
+
+def _managed_file_hand_edited(path: Path, meta: dict, model, force: bool) -> bool:
+    """Return True if a blocking warning fired."""
+    expected = _build_managed_content(meta, model)
+    with open(path) as f:
+        actual = f.read()
+    if actual == expected:
+        return False
+    if force:
+        return False
+    print(
+        f"warning: {path} has been hand-edited since last sync — "
+        f"skipping. Use --force to overwrite.",
+        file=sys.stderr,
+    )
+    return True
+
+
+# ---------------------------------------------------------------------------
+# Init
+# ---------------------------------------------------------------------------
+
+
+def cmd_init(scope: str, force=False) -> int:
+    example = example_config_path()
+    if not example.exists():
+        print(
+            f"error: template not found at {example}",
+            file=sys.stderr,
+        )
+        return 7
+
+    if scope == "global":
+        target = global_config_path()
+        commented = False
+    else:
+        target = project_config_path()
+        commented = True  # scaffold as fully-commented opt-in template
+
+    if target.exists() and not force:
+        print(
+            f"error: {target} already exists — pass --force to overwrite",
+            file=sys.stderr,
+        )
+        return 8
+
+    target.parent.mkdir(parents=True, exist_ok=True)
+    content = example.read_text()
+    if commented:
+        content = _comment_all(content)
+    target.write_text(content)
+    print(f"→ wrote {target}")
+    if commented:
+        print(
+            "  (every non-comment line prefixed with '#' — uncomment to override global config)"
+        )
+    return 0
+
+
+def _comment_all(text: str) -> str:
+    out = []
+    for line in text.splitlines(keepends=True):
+        stripped = line.lstrip()
+        if not stripped or stripped.startswith("#"):
+            out.append(line)
+        else:
+            # preserve leading whitespace
+            leading = line[: len(line) - len(stripped)]
+            out.append(f"{leading}# {stripped}")
+    return "".join(out)
+
+
+# ---------------------------------------------------------------------------
+# Show
+# ---------------------------------------------------------------------------
+
+
+def cmd_show(skill_name=None) -> int:
+    global_cfg = load_yaml_file(global_config_path())
+    project_cfg = load_yaml_file(project_config_path())
+    scope = "project" if project_config_path().exists() else "global"
+
+    source_skills = read_skills(repo_root() / "commands")
+    if skill_name:
+        if skill_name not in source_skills:
+            print(f"error: unknown skill '{skill_name}'", file=sys.stderr)
+            return 9
+        meta = source_skills[skill_name]
+        model, source = resolve_model(
+            skill_name, meta["bucket"], global_cfg, project_cfg, scope
+        )
+        _print_show_line(skill_name, meta, model, source)
+        return 0
+
+    # table for all skills
+    for name in source_skills:
+        meta = source_skills[name]
+        model, source = resolve_model(name, meta["bucket"], global_cfg, project_cfg, scope)
+        _print_show_line(name, meta, model, source)
+    return 0
+
+
+def _print_show_line(name, meta, model, source):
+    bucket = meta["bucket"] or "-"
+    display_model = model if model is not None else "(session model)"
+    print(f"{name} [{bucket}] → {display_model} (source: {source})")
+
+
+# ---------------------------------------------------------------------------
+# Self-test (hidden — frontmatter round-trip fixture)
+# ---------------------------------------------------------------------------
+
+
+def cmd_self_test() -> int:
+    fixtures = ["hotfix.md", "build-os-retrofit.md"]
+    failures = []
+    for name in fixtures:
+        path = repo_root() / "commands" / name
+        if not path.exists():
+            print(f"self-test: fixture missing: {path}", file=sys.stderr)
+            failures.append(name)
+            continue
+        original = path.read_text()
+        try:
+            fm, body = parse_frontmatter(original)
+        except ValueError as e:
+            print(f"self-test: {name}: parse failed: {e}", file=sys.stderr)
+            failures.append(name)
+            continue
+        roundtripped = serialize(fm, body)
+        if original != roundtripped:
+            print(f"self-test: {name}: round-trip byte-diff", file=sys.stderr)
+            # helpful diff for the reviewer
+            import difflib as _dl
+            diff = _dl.unified_diff(
+                original.splitlines(keepends=True),
+                roundtripped.splitlines(keepends=True),
+                fromfile=f"{name}.original",
+                tofile=f"{name}.roundtrip",
+                n=2,
+            )
+            sys.stderr.writelines(diff)
+            failures.append(name)
+    if failures:
+        return 10
+    print("self-test: all fixtures round-trip byte-identical")
+    return 0
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+
+def build_parser():
+    p = argparse.ArgumentParser(
+        prog="bin/build-config",
+        description="Layered per-skill model configuration for build-os.",
+    )
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    sync = sub.add_parser("sync", help="Apply config to skill files.")
+    scope = sync.add_mutually_exclusive_group()
+    scope.add_argument("--global", dest="scope", action="store_const", const="global")
+    scope.add_argument("--project", dest="scope", action="store_const", const="project")
+    scope.add_argument("--all", dest="scope", action="store_const", const="all")
+    sync.set_defaults(scope="all")
+    sync.add_argument("--force", action="store_true", help="Bypass warnings and hand-edit protection.")
+
+    init = sub.add_parser("init", help="Scaffold a config.yaml.")
+    scope2 = init.add_mutually_exclusive_group(required=True)
+    scope2.add_argument("--global", dest="scope", action="store_const", const="global")
+    scope2.add_argument("--project", dest="scope", action="store_const", const="project")
+    init.add_argument("--force", action="store_true", help="Overwrite existing file.")
+
+    show = sub.add_parser("show", help="Print resolved model per skill.")
+    show.add_argument("skill", nargs="?", help="Skill name (optional — omit for full table)")
+
+    sub.add_parser("self-test", help=argparse.SUPPRESS)
+
+    return p
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
+
+    if args.cmd == "sync":
+        if args.scope == "global":
+            return cmd_sync_global(force=args.force)
+        if args.scope == "project":
+            return cmd_sync_project(force=args.force)
+        # --all
+        rc1 = cmd_sync_global(force=args.force)
+        rc2 = cmd_sync_project(force=args.force)
+        return rc1 or rc2
+
+    if args.cmd == "init":
+        return cmd_init(args.scope, force=args.force)
+
+    if args.cmd == "show":
+        return cmd_show(args.skill)
+
+    if args.cmd == "self-test":
+        return cmd_self_test()
+
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

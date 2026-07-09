@@ -1,12 +1,13 @@
 ---
 name: hotfix
 description: Structured bug fix process with diagnosis, implementation, review, and documentation. Lighter than PRD but ensures quality.
+bucket: execution
 triggers:
   - bug
   - fix
   - broken
   - not working
-  - "fix this"
+  - fix this
   - regression
 ---
 

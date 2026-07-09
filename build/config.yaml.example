@@ -1,0 +1,43 @@
+# build-os per-skill model configuration
+#
+# Precedence (highest wins, per skill):
+#   1. project skills.<name>
+#   2. project task_models[bucket-of-skill]
+#   3. project default_model
+#   4. global skills.<name>
+#   5. global task_models[bucket-of-skill]
+#   6. global default_model
+#   7. no model: field (session model)
+#
+# See ~/.claude/build/AGENTS.md [Config] for the full chain.
+# Values: opus, sonnet, haiku, or `inherit` (use session model).
+# Global: this file lives at ~/.claude/build/config.yaml (gitignored).
+# Project: this file lives at <project>/.build/config.yaml (committable).
+
+# ---------------------------------------------------------------------------
+# default_model — used when nothing more specific matches.
+# ---------------------------------------------------------------------------
+# default_model: opus
+
+# ---------------------------------------------------------------------------
+# task_models — per-bucket defaults. Each build-os skill declares its bucket
+# in its frontmatter (planning | execution | mechanical).
+#
+# planning — deep reasoning, tradeoff analysis, plan/PRD design. Opus fits.
+# execution — turn plans into code. Sonnet: same-quality output for the shape
+#             of work with better cost/latency than Opus.
+# mechanical — checklists, verification, deterministic multi-step flows. Haiku
+#              is enough and fastest.
+# ---------------------------------------------------------------------------
+# task_models:
+#   planning:   opus
+#   execution:  sonnet
+#   mechanical: haiku
+
+# ---------------------------------------------------------------------------
+# skills — per-skill overrides. Wins over task_models and default_model.
+# ---------------------------------------------------------------------------
+# skills:
+#   ship:   opus       # spans planning+execution+mechanical; force one model
+#   review: opus       # judgment-heavy even though "review" reads mechanical
+#   wrap:   inherit    # explicit: use whatever /model is set to in the session

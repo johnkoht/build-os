@@ -47,7 +47,7 @@
 |  load:Only scope-matched (or heuristic-matched) bodies are loaded; non-matches stay on disk.
 |}
 
-[Skills]|root:~/.claude/commands
+[Skills]|root:~/.claude/commands|bucket:planning|execution|mechanical declared per skill; drives task_models resolution in `bin/build-config`
 |ship:{triggers:"/ship after plan approval, ship this plan, build autonomously",does:"Full plan-to-merge workflow. Pre-mortem, review, PRD, worktree, build, wrap, merge — with intelligent gates."}
 |build:{triggers:"Execute this PRD, Build everything in prd.json, multi-task PRDs (3+)",does:"Autonomous PRD execution with Orchestrator + Reviewer. Includes pre-mortem, structured feedback, holistic review."}
 |hotfix:{triggers:"bug, fix, broken, not working, fix this, regression",does:"Structured bug fix process with diagnosis, implementation, review, and documentation."}
@@ -63,6 +63,15 @@
 |before_work:scan memory/MEMORY.md + collaboration.md
 |after_work:add entry to memory/entries/, update index
 |learnings:LEARNINGS.md = component-local gotchas/invariants; create in any directory where recurring patterns emerge
+
+[Config]|per-skill model selection for build-os slash commands
+|purpose:Layered YAML config controls which Claude model each skill runs on. Config → skill frontmatter is bridged by `bin/build-config sync` (not runtime).
+|global:~/.claude/build/config.yaml (gitignored)
+|project:<project>/.build/config.yaml (committable)
+|precedence:project.skills → project.task_models[bucket] → project.default_model → global.skills → global.task_models[bucket] → global.default_model → (session model)
+|buckets:planning | execution | mechanical — declared in each skill's `bucket:` frontmatter
+|sync:`bin/build-config sync` writes `model:` into `~/.claude/commands/*.md`. First global sync replaces the `~/.claude/commands` symlink with a materialized directory; re-run after `git pull` in build-os.
+|values:opus, sonnet, haiku, or `inherit` (use session model)
 
 [Context Stack]|4-layer composition for subagents
 |layer_1:System awareness — this file (AGENTS.md)

@@ -3,3 +3,6 @@ build/memory/collaboration.md
 
 # Local overrides
 build/standards/build-standards.local.md
+
+# Per-skill model config — personal, not tracked
+build/config.yaml

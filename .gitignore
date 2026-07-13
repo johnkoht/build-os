@@ -6,3 +6,6 @@ build/standards/build-standards.local.md
 
 # Per-skill model config — personal, not tracked
 build/config.yaml
+
+# Native worktrees created by EnterWorktree
+.claude/worktrees/

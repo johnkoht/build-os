@@ -45,10 +45,17 @@ Walk the project and produce a gap report. Check:
 - [ ] Project `CLAUDE.md` has the slash-command workflow table
 - [ ] Project `CLAUDE.md` declares `QUALITY_GATES`
 
+**Guardrail hooks + worktree isolation**
+- [ ] `.build/` exists at the git root (the isolation-guard hook fires on this marker)
+- [ ] `.gitignore` contains `.claude/worktrees/` (prevents worktree noise in `git status`)
+- [ ] `~/.claude/settings.json` has the `isolation-guard` hook wired (via `install.sh`)
+- [ ] `~/.claude/settings.json` has the `plan-redirect` hook wired (via `install.sh`)
+
 For each ✗, classify severity:
 - **blocker** — subagents can't function correctly (e.g., no CLAUDE.md AGENTS.md ref)
 - **gap** — feature works but Layer 4 missing (e.g., empty expertise dirs)
 - **migration** — exists but needs upgrade (e.g., PROFILE.md missing frontmatter)
+- **hook-gap** — guardrail hooks present in settings.json but `.build/` missing means they don't fire for this project
 
 ---
 
@@ -86,6 +93,9 @@ Output the gap table and proposed fixes. Get user confirmation before any write.
 | PROFILE.md frontmatter | N/A (no profiles yet) | — | — |
 | memory/MEMORY.md | ✅ exists | — | — |
 | CLAUDE.md → AGENTS.md ref | ✅ present | — | — |
+| .gitignore → .claude/worktrees/ | ✅ present | — | — |
+| isolation-guard hook wired | ✅ present | — | — |
+| plan-redirect hook wired | ✅ present | — | — |
 
 ### Domains detected
 
@@ -109,6 +119,51 @@ If user says "adjust", iterate on the domain list before proceeding.
 ---
 
 ## Phase 4: Execute
+
+### Guardrail bootstrap (do first, before domain profiles)
+
+If the project is missing `.build/` or the gitignore entry, fix those before writing expertise profiles — the edit-guard hook fires on the `.build/` marker, so it must exist before the project is protected.
+
+**Step 1: Create `.build/` if absent**
+
+```bash
+mkdir -p .build/expertise .build/agents
+```
+
+Then create `.build/README.md` with a brief description of the build-os structure (copy the scaffold from `new-project` or write a one-liner). Commit with: `chore: add .build/ — enable build-os guardrail hooks`.
+
+**Step 2: Add `.claude/worktrees/` to `.gitignore`**
+
+If not already present, add:
+
+```
+# Native worktrees created by Claude Code EnterWorktree (/ship, /build)
+.claude/worktrees/
+```
+
+**Step 3: Verify hooks are wired in `~/.claude/settings.json`**
+
+Check that both guardrail hooks are present. Run from the build-os repo root:
+
+```bash
+python3 -c "
+import json
+d = json.load(open('$HOME/.claude/settings.json'))
+pre = d.get('hooks', {}).get('PreToolUse', [])
+cmds = [h['command'] for e in pre for h in e.get('hooks', [])]
+isolation = '/Users/johnkoht/.claude/build/hooks/isolation-guard.sh'
+plan = '/Users/johnkoht/.claude/build/hooks/plan-redirect.sh'
+print('isolation-guard:', 'PRESENT' if isolation in cmds else 'MISSING')
+print('plan-redirect:  ', 'PRESENT' if plan in cmds else 'MISSING')
+print('worktree.baseRef:', d.get('worktree', {}).get('baseRef', 'MISSING'))
+"
+```
+
+If either shows MISSING, run `install.sh` from the build-os repo root to add them.
+
+**Step 4: Verify the hook fires for this project**
+
+In a Claude Code session on the **main** checkout of this project, ask the agent to edit a source file (not in `plans/`, `memory/`, or `.build/`). You should see an `ask` prompt routing to `/ship` or `/hotfix`. If not, check that `.build/` exists at the git root.
 
 For each domain, branch on source quality:
 
@@ -178,10 +233,18 @@ If a populated PROFILE.md exists but lacks `domain`/`scope`/`last_validated` fro
 **Files added**: {list}
 **Skipped**: {list with reasons}
 
+**Guardrail status**:
+- `.build/` present: ✅ (isolation-guard hook will fire for this project)
+- `.gitignore` has `.claude/worktrees/`: ✅
+- `isolation-guard` hook wired in `~/.claude/settings.json`: ✅ / ⚠️ MISSING — run install.sh
+- `plan-redirect` hook wired in `~/.claude/settings.json`: ✅ / ⚠️ MISSING — run install.sh
+- `worktree.baseRef: head`: ✅ / ⚠️ MISSING — run install.sh
+
 ### Next
 
 - Run `/wrap` on a recent feature branch to validate the new profiles fire correctly
 - As you build new features, `/post-mortem` will route architectural learnings into the profiles automatically
+- Verify edit-guard fires: on main checkout, ask Claude to edit a source file — expect `ask` prompt routing to `/ship`
 ```
 
 ---
@@ -203,3 +266,4 @@ If a populated PROFILE.md exists but lacks `domain`/`scope`/`last_validated` fro
 - **Single-profile refresh** → just edit it directly; bump `last_validated`
 - **PRD/plan archeology** → only touches `.build/`, `memory/`, and CLAUDE.md wiring
 - **LEARNINGS.md generation** → emerges from work, not retrofit
+- **build-os itself** → intentionally NOT given `.build/`. Adding it would make isolation-guard and plan-redirect fire during framework development (editing build-os source = the normal workflow, not an ad-hoc violation). Deferred to backlog.

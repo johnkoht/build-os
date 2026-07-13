@@ -68,6 +68,8 @@ Present risks + mitigations to builder. Wait for approval before proceeding.
 
 ## Phase 2: Task Execution Loop
 
+> Fix requests during execution → `/hotfix` (mandatory reviewer + tests), never ad-hoc patches.
+
 For each pending task (in dependency order):
 
 ### Step 1: Prepare Context (Orchestrator)

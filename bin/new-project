@@ -213,8 +213,17 @@ __pycache__/
 
 # OS
 .DS_Store
+
+# Native worktrees created by Claude Code EnterWorktree (/ship, /build)
+.claude/worktrees/
 EOF
   ok "Created .gitignore"
+else
+  # Ensure .claude/worktrees/ is present even in existing .gitignore
+  if ! grep -q '\.claude/worktrees/' .gitignore 2>/dev/null; then
+    printf '\n# Native worktrees created by Claude Code EnterWorktree (/ship, /build)\n.claude/worktrees/\n' >> .gitignore
+    ok "Added .claude/worktrees/ to .gitignore"
+  fi
 fi
 
 # ── git init ──────────────────────────────────────────────────────────────────
@@ -243,3 +252,9 @@ echo "  4. Open in Claude Code: claude ."
 echo ""
 echo "Expertise profiles: run /build-os-retrofit once you have 2-3 domains identified."
 echo "When ready to build: /ship (after approving a plan)"
+echo ""
+echo "Guardrail hooks:"
+echo "  The isolation-guard and plan-redirect hooks in ~/.claude/settings.json"
+echo "  protect this project's .build/ marker. They were installed by install.sh."
+echo "  Verify: in a Claude Code session on main, try editing a source file —"
+echo "  you should see an 'ask' prompt routing to /ship or /hotfix."

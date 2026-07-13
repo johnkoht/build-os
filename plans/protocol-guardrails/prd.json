@@ -142,7 +142,8 @@
     {
       "id": "task-7",
       "title": "Doc steer + routing (AGENTS.md, CLAUDE.md, build.md)",
-      "status": "pending",
+      "status": "complete",
+      "commitSha": "75b103a",
       "dependsOn": [
         "task-3",
         "task-4"

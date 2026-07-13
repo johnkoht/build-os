@@ -60,7 +60,8 @@
     {
       "id": "task-3",
       "title": "/plan skill",
-      "status": "pending",
+      "status": "complete",
+      "commitSha": "d860604",
       "dependsOn": [],
       "description": "Create commands/plan.md — our plan-mode replacement. A normal (non-read-only) skill, model- AND user-invocable, that explores read-only first, discusses trade-offs, then writes plans/{slug}/plan.md (status: draft) and ends each round with a keep-editing / /approve prompt. Never auto-executes. Ends the saved plan with the pre-commitment line.",
       "filesToRead": [
@@ -80,7 +81,8 @@
     {
       "id": "task-4",
       "title": "/approve skill",
-      "status": "pending",
+      "status": "complete",
+      "commitSha": "d860604",
       "dependsOn": [],
       "description": "Create commands/approve.md — a user-only gate that marks the pending plan approved and prints the next step. disable-model-invocation: true so Claude can never auto-invoke it.",
       "filesToRead": [

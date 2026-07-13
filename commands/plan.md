@@ -1,6 +1,6 @@
 ---
 name: plan
-description: Plan-mode replacement. Explores read-only first, discusses trade-offs, writes plans/{slug}/plan.md (status: draft), then presents keep-editing / /approve options. Never auto-executes.
+description: Plan-mode replacement. Explores read-only first, discusses trade-offs, writes a draft plan under plans/, then presents keep-editing / approve options. Never auto-executes.
 bucket: planning
 ---
 

@@ -15,6 +15,7 @@ Automate the complete build workflow from approved plan to merged code. Say `/sh
 - After approving a plan: say `/ship`
 - Medium plans (3-5 steps): `/ship` or `/build` directly
 - Large plans (6+ steps): `/ship` (mandatory full workflow)
+- **3-5 step, low-risk plans**: `/ship lite {slug}` — skips pre-mortem and cross-model review; keeps PRD, worktree, build, wrap, and merge. Use when the plan is simple enough that risk analysis adds no value.
 
 ## Prerequisites
 
@@ -33,16 +34,21 @@ fi
 echo "✅ Worktree: $(git branch --show-current)"
 ```
 
+> Note: This guard passes correctly from `.claude/worktrees/` paths — `git rev-parse --git-dir` returns an absolute `.../.git/worktrees/<name>` there, never the literal string `.git`.
+
 ---
 
 ## Pre-Flight Check
 
-Read plan frontmatter:
+Read plan frontmatter and detect invocation mode:
 - `status: idea/draft` → **HALT**: "Approve the plan first."
 - `status: planned/approved` → proceed
-- `has_pre_mortem: true` → skip Phase 1.2
-- `has_review: true` → skip Phase 1.3
+- **`/ship lite {slug}` detected** → set `lite=true`; bypass Phase 1.2 AND Phase 1.3 regardless of frontmatter flags
+- `has_pre_mortem: true` → skip Phase 1.2 (only checked when `lite=false`)
+- `has_review: true` → skip Phase 1.3 (only checked when `lite=false`)
 - `has_prd: true` → skip Phase 2.2
+
+**Lite detection**: inspect the invocation args. If the first arg is the literal keyword `lite`, set `lite=true` and treat the second arg as `{slug}`. The `lite` signal is a separate pre-flight condition — it is NOT a frontmatter flag and cannot be set by the model.
 
 ---
 
@@ -52,14 +58,14 @@ Read plan frontmatter:
 [PHASE 0] Initialize Build Log         → plans/{slug}/build-log.md
 [PHASE 1] Pre-Build (main branch)
   1.1 Save Plan
-  1.2 Run Pre-Mortem                   → GATE: CRITICAL risks
-  1.3 Run Cross-Model Review           → GATE: Structural blockers
+  1.2 Run Pre-Mortem                   → GATE: CRITICAL risks      [skipped in lite mode]
+  1.3 Run Cross-Model Review           → GATE: Structural blockers [skipped in lite mode]
 [PHASE 2] Memory & PRD (main branch)
   2.1 Memory Review
   2.2 Convert to PRD                   → /plan-to-prd
   2.3 Commit Artifacts
 [PHASE 3] Worktree Setup
-  3.1 Create Worktree
+  3.1 Create Worktree                  → EnterWorktree
   3.2 Switch to Worktree
 [PHASE 4] Build (worktree branch)
   4.1 Execute PRD                      → GATE: Task failures
@@ -72,7 +78,7 @@ Read plan frontmatter:
   5.5 Generate Ship Report
   5.6 Merge Gate (via Gitboss)         → INTERACTIVE
 [PHASE 6] Cleanup
-  6.1 Remove Worktree & Branch
+  6.1 Remove Worktree & Branch         → ExitWorktree
 ```
 
 ---
@@ -94,6 +100,8 @@ Update at every phase start and complete.
 If plan is only in conversation, save to `plans/{slug}/plan.md` (slug = kebab-case of title).
 
 ### 1.2 Pre-Mortem
+**Skipped in lite mode.**
+
 Run `/pre-mortem` against `plans/{slug}/plan.md`. Save to `plans/{slug}/pre-mortem.md`.
 
 | Condition | Action |
@@ -102,6 +110,8 @@ Run `/pre-mortem` against `plans/{slug}/plan.md`. Save to `plans/{slug}/pre-mort
 | Any CRITICAL risk | → **PAUSE** |
 
 ### 1.3 Cross-Model Review
+**Skipped in lite mode.**
+
 Run `/review` against plan + pre-mortem. Save to `plans/{slug}/review.md`.
 
 | Condition | Action |
@@ -129,16 +139,22 @@ git add plans/{slug}/ && git commit -m "plan: {slug} - artifacts"
 ## Phase 3: Worktree Setup
 
 ### 3.1 Create Worktree
-```bash
-git worktree add ../{repo}-worktrees/{slug} -b feature/{slug}
+Use the native `EnterWorktree` tool. The worktree lands in `.claude/worktrees/{slug}` on a new branch.
+
+```
+EnterWorktree(name: "{slug}")
 ```
 
+> Requires `worktree.baseRef: head` in settings.json (set by install.sh / task-8) so the worktree branches from local HEAD and includes the Phase 2.3 artifact commit — not from `origin/main`.
+
 ### 3.2 Switch
-Change CWD to worktree. Verify `.git` is a file (not directory), branch is `feature/{slug}`.
+`EnterWorktree` changes the working context to the new worktree. Verify the worktree is active and the branch is correct before proceeding to Phase 4.
 
 ---
 
 ## Phase 4: Build
+
+> **Fix-routing:** Fix requests that arise during or after execution → use `/hotfix` (mandatory reviewer + tests). Never apply ad-hoc patches mid-build.
 
 ### 4.1 Execute PRD
 Run `/build` with PRD at `plans/{slug}/prd.md`.
@@ -190,9 +206,10 @@ Dispatch gitboss for: pre-merge checks → diff review → builder prompt → me
 
 ## Phase 6: Cleanup
 
-```bash
-git worktree remove ../{repo}-worktrees/{slug}
-git branch -D feature/{slug}
+Use the native `ExitWorktree` tool to remove the worktree and its branch:
+
+```
+ExitWorktree(action: "remove")
 ```
 
 ---

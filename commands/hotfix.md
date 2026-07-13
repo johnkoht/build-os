@@ -20,8 +20,8 @@ A structured process for fixing bugs that prevents "quick fixes" from creating m
 - ✅ User reports a bug and asks you to fix it
 - ✅ You discover a bug while working
 - ✅ Test failures reveal unexpected behavior
-- ❌ Feature requests (use plan mode)
-- ❌ Refactoring (use plan mode)
+- ❌ Feature requests (use /plan)
+- ❌ Refactoring (use /plan)
 - ❌ Multiple unrelated bugs (triage first, then one hotfix per bug)
 
 ---

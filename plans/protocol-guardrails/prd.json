@@ -118,7 +118,8 @@
     {
       "id": "task-6",
       "title": "ship.md overhaul: /ship lite + native worktrees + fix-routing",
-      "status": "pending",
+      "status": "complete",
+      "commitSha": "c7a70a0",
       "dependsOn": [
         "task-5"
       ],

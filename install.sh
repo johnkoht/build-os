@@ -11,9 +11,10 @@ echo ""
 if [ -L "$CLAUDE_DIR/commands" ] && [ "$(readlink "$CLAUDE_DIR/commands")" = "$REPO/commands" ]; then
   echo "✓ commands/ already linked"
 elif [ -d "$CLAUDE_DIR/commands" ] && [ ! -L "$CLAUDE_DIR/commands" ]; then
-  echo "⚠️  ~/.claude/commands/ exists as a real directory — merging not supported."
-  echo "   Move or rename it, then re-run install.sh"
-  exit 1
+  # Materialized commands dir is the EXPECTED state after `build-config sync --global`
+  # (it replaces the symlink with a real dir). Not an error — build-config owns it.
+  echo "ℹ️  ~/.claude/commands/ is a materialized directory (managed by build-config sync)."
+  echo "   Skills refresh via 'build-config sync --global' — continuing to hooks setup."
 else
   ln -sf "$REPO/commands" "$CLAUDE_DIR/commands"
   echo "✓ linked commands/ → ~/.claude/commands/"

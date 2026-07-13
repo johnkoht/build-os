@@ -101,7 +101,8 @@
     {
       "id": "task-5",
       "title": "Strengthen /hotfix (mandatory reviewer + tests)",
-      "status": "pending",
+      "status": "complete",
+      "commitSha": "b3c99d1",
       "dependsOn": [],
       "description": "Update commands/hotfix.md so the reviewer subagent is MANDATORY (not a self-review fallback) and tests are always run. This makes /hotfix the trustworthy target for routed fix requests.",
       "filesToRead": [

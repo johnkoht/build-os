@@ -168,7 +168,8 @@
     {
       "id": "task-8",
       "title": "install.sh + settings.json merge + sync + retrofit wiring",
-      "status": "pending",
+      "status": "complete",
+      "commitSha": "144b895",
       "dependsOn": [
         "task-1",
         "task-2",

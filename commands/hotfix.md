@@ -75,16 +75,20 @@ Before writing any code, understand the problem deeply.
    - No "while I'm here" scope creep
 
 2. **Add/update tests**
-   - Regression test that would have caught this bug
-   - Verify fix with quality gates (see project CLAUDE.md for `QUALITY_GATES`)
+   - Write a regression test that would have caught this bug
 
-3. **Commit**: `fix(scope): description`
+3. **Run quality gates** (required — must pass before proceeding to review)
+   - Run the regression test you just wrote; it must pass
+   - Run all quality gates listed in the project CLAUDE.md `QUALITY_GATES`
+   - Do not proceed to Phase 3 if any gate fails; fix and re-run
+
+4. **Commit**: `fix(scope): description`
 
 ---
 
 ## Phase 3: Review
 
-Dispatch reviewer subagent:
+**A reviewer subagent is required.** Dispatch it now:
 
 ```
 Code review for hotfix: [bug summary]
@@ -112,7 +116,7 @@ Reviewer output adds one line:
 - **APPROVED** → proceed to Phase 4
 - **ITERATE** → apply feedback, re-run quality gates, re-request review
 
-If subagent not available, self-review using checklist from `~/.claude/build/agents/reviewer.md`.
+⚠️ **Last resort only**: If the subagent infrastructure is genuinely unavailable, you may self-review using the checklist in `~/.claude/build/agents/reviewer.md`. This is not equivalent to an independent reviewer. Note the fallback prominently in your Phase 4 report.
 
 ---
 
@@ -144,4 +148,4 @@ If subagent not available, self-review using checklist from `~/.claude/build/age
 
 - **Multi-bug triage** → Prioritize first, then one hotfix per bug
 - **Refactor discovery** → Note it and stay focused on the bug
-- **Feature changes disguised as bugs** → Route to plan mode
+- **Feature changes disguised as bugs** → Route to `/plan`

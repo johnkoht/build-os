@@ -12,8 +12,19 @@ Started: 2026-07-12
 - [x] Phase 2: Memory & PRD (9-task prd.json; artifacts committed on main)
 - [x] Phase 3: Worktree Setup (EnterWorktree → .claude/worktrees/protocol-guardrails, baseRef head)
 - [x] Phase 4: Build (9/9 tasks complete; holistic review READY, 0 must-fix)
-- [~] Phase 5: Wrap & Report (memory entry, LEARNINGS, index done; /wrap + ship report next)
-- [ ] Phase 6: Cleanup (after merge — INTERACTIVE merge gate pending John)
+- [x] Phase 5: Wrap & Report (memory entry, LEARNINGS, index, ship report — 48/48 tests)
+- [x] Phase 6: Cleanup (merged 6d58e1a → main; worktree + branch removed)
+
+## Activation (post-merge — 2 fix-forward bugs found by verify_before_done)
+
+- **install.sh aborted before hooks merge.** `set -e` + `exit 1` on the "commands is a real dir"
+  guard — but a materialized commands dir is the EXPECTED post-`build-config sync` state. Fixed:
+  guard is now a non-fatal note that continues to the hooks merge.
+- **`/plan` frontmatter broke `build-config sync`.** `description:` contained an unquoted `status: draft`
+  — the `: ` made YAML parse it as a nested mapping → sync aborted → `/plan`+`/approve` stayed dark.
+  Fixed: reworded to remove the colon; added a YAML-validation pass over all command frontmatter.
+- Both hooks live in settings.json (matchers correct, baseRef head, model preserved); edit-guard
+  fires `ask` end-to-end from the installed path; `/plan` + `/approve` materialized and invocable.
 
 ## Task results (all reviewed)
 

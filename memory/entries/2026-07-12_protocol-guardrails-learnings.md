@@ -44,6 +44,13 @@ Harness-enforced guardrails so agents can't skip the /ship protocol:
 - **macOS symlink canonicalization** bites hook path math: `mktemp -d` returns `/var/...` but
   `git rev-parse --show-toplevel` returns `/private/var/...`; canonicalize with `pwd -P` before
   prefix-stripping. (See `build/hooks/LEARNINGS.md`.)
+- **Green unit tests ≠ working activation — test the real install path.** Two bugs survived 48
+  passing assertions + a holistic review and only surfaced when actually activating: (1) install.sh
+  `exit 1`'d before the hooks merge because a materialized `~/.claude/commands` (the normal
+  post-`build-config sync` state) tripped a "real dir = error" guard; (2) `/plan`'s frontmatter
+  `description` had an unquoted `status: draft`, and the `: ` made `build-config`'s YAML parser abort
+  the sync — leaving the new skills dark. Lesson: for a change that ships hooks/skills, RUN the
+  install + sync end-to-end (not just unit tests), and validate every skill's frontmatter as YAML.
 
 ## Recommendations
 

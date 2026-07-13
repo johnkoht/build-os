@@ -198,7 +198,7 @@
     {
       "id": "task-9",
       "title": "Backlog file",
-      "status": "pending",
+      "status": "complete",
       "dependsOn": [
         "task-8"
       ],
@@ -209,7 +209,8 @@
       "acceptanceCriteria": [
         "backlog.md lists: SessionStart injection, UserPromptSubmit approval nudge, .build/.planning read-only sentinel, statusline MAIN/worktree indicator, edit-guard ask→deny escalation, separate /fix skill, retrofit build-os itself (with the trade-off noted).",
         "Each item has a one-line rationale / trigger for when to pull it off the backlog."
-      ]
+      ],
+      "commitSha": "0ce105b"
     }
   ]
 }

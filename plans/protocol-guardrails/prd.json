@@ -1,0 +1,192 @@
+{
+  "name": "protocol-guardrails",
+  "branchName": "feature/protocol-guardrails",
+  "description": "Harness-enforced guardrails (hooks + skills) + minimal doc steering so build-os agents route through /plan → /approve → /ship instead of ad-hoc building on main.",
+  "globalRules": [
+    "Sequential execution only — no parallel subagents on the same codebase.",
+    "Fail-open is mandatory for anything in the global hook path (exit 0 on any ambiguity/error).",
+    "Hook command paths in settings.json must be ABSOLUTE: /Users/johnkoht/.claude/build/hooks/... (no ~).",
+    "Dark-code audit: every new skill/hook must be invocable/wired, not just present in the repo.",
+    "~/.claude/commands is a materialized real dir — new/modified skills need `build-config sync` to go live."
+  ],
+  "tasks": [
+    {
+      "id": "task-1",
+      "title": "Edit-guard PreToolUse hook",
+      "status": "pending",
+      "dependsOn": [],
+      "description": "Create build/hooks/isolation-guard.sh — a PreToolUse hook that fires on Edit|Write|MultiEdit|NotebookEdit and, in build-os-managed projects only, surfaces an `ask` prompt when the agent tries to edit SOURCE in the MAIN checkout, routing it to /ship or /hotfix. This is the backstop that catches ad-hoc builds on main.",
+      "filesToRead": [
+        "plans/protocol-guardrails/pre-mortem.md (R1, R3, R6 mitigations)",
+        "plans/protocol-guardrails/review.md (notes 2, 5)",
+        "commands/ship.md (Worktree Guard git-dir logic, lines 25-34)",
+        "~/.claude/settings.json (no hooks key yet)"
+      ],
+      "acceptanceCriteria": [
+        "Script at build/hooks/isolation-guard.sh, executable, reads tool-call JSON on stdin.",
+        "FAIL-OPEN: exit 0 on any ambiguity — no git repo, missing file_path, parse failure, unknown state.",
+        "Fast early-exit BEFORE expensive work when repo is not a git repo OR has no .build/ marker at toplevel.",
+        "Fires only when: file is in the MAIN checkout (git rev-parse --git-dir contains no '/worktrees/'), repo toplevel has a .build/ dir, and the path is NOT allowlisted.",
+        "Allowlist by DIRECTORY prefix only (plans/, memory/, .build/, LEARNINGS.md) — never by file extension (build-os source is markdown).",
+        "Resolve tool_input.file_path against stdin `cwd` when relative BEFORE prefix-matching (review note 5).",
+        "On block: emit {\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"ask\",\"permissionDecisionReason\":\"...\"}}. Reason routes to /ship (3+ steps) or /hotfix; must NOT say 'just create a worktree' (avoids false-compliance bypass).",
+        "Uses jq for JSON parsing; if jq absent, fail-open (exit 0).",
+        "Unit test / test harness: (a) edit .ts in a NON-build repo → passes through; (b) source edit on main of a .build repo → ask; (c) plans/ edit on main of a .build repo → passes; (d) edit inside a worktree → passes."
+      ]
+    },
+    {
+      "id": "task-2",
+      "title": "Plan-mode redirect hook (+ empirical hookability test)",
+      "status": "pending",
+      "dependsOn": ["task-1"],
+      "description": "Determine empirically whether EnterPlanMode is PreToolUse-matchable, then add a hook that denies native plan mode in .build/ projects and redirects the agent to /plan. If not hookable, fall back to a CLAUDE.md callout (handled in task-7) and document the gap.",
+      "filesToRead": [
+        "plans/protocol-guardrails/pre-mortem.md (R4)",
+        "plans/protocol-guardrails/review.md (note 8)",
+        "build/hooks/isolation-guard.sh (from task-1, for style/pattern)"
+      ],
+      "acceptanceCriteria": [
+        "STEP 1 (before writing hook code): empirically verify a PreToolUse matcher on `EnterPlanMode` actually fires — install a trivial logging matcher, trigger plan mode, confirm invocation. Record the result in the task report and build-log.",
+        "If hookable: build/hooks/plan-redirect.sh — PreToolUse matcher `EnterPlanMode`, self-gated to .build/ repos, emits permissionDecision `deny` with reason redirecting to /plan (saves to plans/, gates with /approve). Fail-open.",
+        "If NOT hookable: skip the hook, note the residual gap; task-7's CLAUDE.md callout is the fallback.",
+        "Self-gating identical to task-1 (only .build/ repos); non-build repos keep native plan mode.",
+        "Does not affect the user's manual plan-mode toggle where possible (document observed behavior)."
+      ]
+    },
+    {
+      "id": "task-3",
+      "title": "/plan skill",
+      "status": "pending",
+      "dependsOn": [],
+      "description": "Create commands/plan.md — our plan-mode replacement. A normal (non-read-only) skill, model- AND user-invocable, that explores read-only first, discusses trade-offs, then writes plans/{slug}/plan.md (status: draft) and ends each round with a keep-editing / /approve prompt. Never auto-executes. Ends the saved plan with the pre-commitment line.",
+      "filesToRead": [
+        "commands/ship.md (Pre-Flight, Phase 1.1 save-plan conventions)",
+        "commands/plan-to-prd.md (plan → prd expectations, slug conventions)",
+        "build/AGENTS.md ([Project Structure] plan layout, [Skills] frontmatter conventions)",
+        "build/memory/collaboration.md (John's 'discuss before committing' style)"
+      ],
+      "acceptanceCriteria": [
+        "commands/plan.md with frontmatter: name: plan, description, bucket: planning. Model+user invocable (NO disable-model-invocation).",
+        "Flow: (1) read-only explore + discuss trade-offs; (2) write plans/{slug}/plan.md with status: draft and standard frontmatter (title, slug, status, created, has_pre_mortem/has_review/has_prd: false); (3) end each iteration with the literal two options: '1. keep editing  2. /approve'.",
+        "Explicitly instructs: do NOT implement, do NOT enter native plan mode, do NOT auto-execute after presenting the plan.",
+        "The saved plan.md ends with the pre-commitment line: 'On approval → /approve → /ship {slug}'.",
+        "Slug derivation matches existing convention (kebab-case of title)."
+      ]
+    },
+    {
+      "id": "task-4",
+      "title": "/approve skill",
+      "status": "pending",
+      "dependsOn": [],
+      "description": "Create commands/approve.md — a user-only gate that marks the pending plan approved and prints the next step. disable-model-invocation: true so Claude can never auto-invoke it.",
+      "filesToRead": [
+        "commands/plan.md (from task-3, status transitions)",
+        "commands/ship.md (Pre-Flight status expectations: planned/approved → proceed)",
+        "build/AGENTS.md ([Skills] frontmatter conventions)"
+      ],
+      "acceptanceCriteria": [
+        "commands/approve.md with frontmatter including `disable-model-invocation: true` (user-only).",
+        "Sets plans/{slug}/plan.md frontmatter status: approved (from draft/planned).",
+        "If the plan exists only in conversation, saves it to plans/{slug}/plan.md first, then approves.",
+        "Prints the next-step menu: /ship (full) | /ship lite (3-5 step low-risk) | /build (have PRD+worktree).",
+        "Does nothing destructive; idempotent if already approved."
+      ]
+    },
+    {
+      "id": "task-5",
+      "title": "Strengthen /hotfix (mandatory reviewer + tests)",
+      "status": "pending",
+      "dependsOn": [],
+      "description": "Update commands/hotfix.md so the reviewer subagent is MANDATORY (not a self-review fallback) and tests are always run. This makes /hotfix the trustworthy target for routed fix requests.",
+      "filesToRead": [
+        "commands/hotfix.md (current Phase 3 review is optional fallback)",
+        "build/agents/reviewer.md (reviewer checklist)"
+      ],
+      "acceptanceCriteria": [
+        "Phase 3 reviewer subagent is required; the 'if subagent not available, self-review' escape is removed or downgraded to an explicit last resort with a warning.",
+        "Phase 2 explicitly requires running quality gates + the regression test before review.",
+        "No change to /hotfix's single-bug scope; keep it lighter than a PRD."
+      ]
+    },
+    {
+      "id": "task-6",
+      "title": "ship.md overhaul: /ship lite + native worktrees + fix-routing",
+      "status": "pending",
+      "dependsOn": ["task-5"],
+      "description": "Single task owning ALL ship.md edits to avoid conflicts: add a /ship lite mode; replace hand-rolled `git worktree add`/`git worktree remove` with native EnterWorktree/ExitWorktree (worktrees land in .claude/worktrees/); add a fix-requests → /hotfix routing note; add .claude/worktrees/ to .gitignore; set worktree.baseRef: head.",
+      "filesToRead": [
+        "commands/ship.md (Phases 3 and 6, Pre-Flight gate, When to Use)",
+        "plans/protocol-guardrails/review.md (notes 3, 4, 7)",
+        "plans/protocol-guardrails/pre-mortem.md (R7)",
+        ".gitignore"
+      ],
+      "acceptanceCriteria": [
+        "/ship lite documented in 'When to Use' + a Pre-Flight condition: lite bypasses Phase 1.2 (pre-mortem) and 1.3 (review) even when frontmatter flags are false, keeps Phases 2-6 (PRD, worktree, build, wrap, merge). Specify the exact invocation (e.g. `/ship lite {slug}`) and how pre-flight detects it (review note 7).",
+        "Phase 3 uses native EnterWorktree (worktrees in .claude/worktrees/); Phase 6 uses ExitWorktree (remove). Remove the hand-rolled `git worktree add ../{repo}-worktrees/...`.",
+        "Note that EnterWorktree needs worktree.baseRef: head so the worktree includes the just-committed plan/PRD artifacts — reference the settings key (set in task-8).",
+        "Keep the existing Worktree Guard (git-dir check) — add a one-line note that it passes correctly from .claude/worktrees/ paths (review note 3).",
+        "Add a routing note in the build/fix phases: 'Fix requests during or after execution → /hotfix, never ad-hoc patches.'",
+        ".gitignore gains a `.claude/worktrees/` entry (review note 4)."
+      ]
+    },
+    {
+      "id": "task-7",
+      "title": "Doc steer + routing (AGENTS.md, CLAUDE.md, build.md)",
+      "status": "pending",
+      "dependsOn": ["task-3", "task-4"],
+      "description": "Minimal, corrective doc changes. Point plan_first at /plan; fix isolation_gate to guard code-writing-on-main (not branch-switching); add a small_tasks boundary; soften zero_context_switching; add a CLAUDE.md callout to use /plan (also the fallback if task-2's hook isn't possible); add a fix-routing note to build.md.",
+      "filesToRead": [
+        "build/AGENTS.md (lines 11 small_tasks, 22 isolation_gate; plan_first is in CLAUDE.md)",
+        "CLAUDE.md (Build Principles: plan_first, zero_context_switching)",
+        "commands/build.md (fix-routing note location)",
+        "plans/protocol-guardrails/review.md (note 6 — build-os self-protection deferred)"
+      ],
+      "acceptanceCriteria": [
+        "AGENTS.md isolation_gate rewritten to prohibit editing SOURCE in the main checkout (not just branch-switching); names the failure mode (ad-hoc build after approval); says a hand-made worktree is not a substitute for /ship.",
+        "AGENTS.md small_tasks gains an explicit boundary: act directly only for <=2 files, no new files, no dep/schema changes, and no written plan; else route to /plan → /ship (or /hotfix for bugs).",
+        "plan_first (CLAUDE.md) points to /plan and steers away from native plan mode.",
+        "zero_context_switching softened to apply to bugs; features route through the flow.",
+        "CLAUDE.md gains a short callout: after a plan is approved, run /approve then /ship; use /plan not native plan mode. Kept minimal (steer, don't bloat).",
+        "build.md gains a 'fix requests → /hotfix, never ad-hoc' note.",
+        "Net additions are minimal and corrective — no walls of text."
+      ]
+    },
+    {
+      "id": "task-8",
+      "title": "install.sh + settings.json merge + sync + retrofit wiring",
+      "status": "pending",
+      "dependsOn": ["task-1", "task-2", "task-3", "task-4", "task-6"],
+      "description": "Wire everything so it takes effect: idempotent hooks merge into ~/.claude/settings.json (absolute paths, JSON-validated, backup first), trigger build-config sync so new/modified skills go live, and make new-project + build-os-retrofit ensure .build/ + hooks install + .claude/worktrees/ gitignore. Also set worktree.baseRef: head.",
+      "filesToRead": [
+        "install.sh (symlink model; errors on real commands dir at lines 13-15)",
+        "bin/new-project (line ~98 creates .build/)",
+        "commands/build-os-retrofit.md",
+        "bin/build-config (sync behavior)",
+        "plans/protocol-guardrails/review.md (notes 1, 2, 6)",
+        "plans/protocol-guardrails/pre-mortem.md (R2 — do NOT corrupt live settings.json)"
+      ],
+      "acceptanceCriteria": [
+        "install.sh gains an idempotent settings.json hooks-merge step: back up settings.json, add PreToolUse hook(s) with ABSOLUTE command path, validate the result parses as JSON, no-op on re-run. R2: develop/test the merge against a COPY; the live merge is a deliberate, validated step.",
+        "install.sh sets worktree.baseRef: head in settings.json (idempotent).",
+        "install.sh (or its output) runs / instructs `build-config sync` so /plan, /approve, and modified ship/hotfix/build reach the materialized ~/.claude/commands. DARK-CODE AC: /plan and /approve are invocable as slash commands after sync.",
+        "new-project ensures the new project has .build/ and .claude/worktrees/ gitignored, and that hooks are installed.",
+        "build-os-retrofit adds .build/ to existing projects (so the guard protects them) and installs/verifies hooks.",
+        "build-os itself is intentionally NOT given .build/ (review note 6 — deferred); document this."
+      ]
+    },
+    {
+      "id": "task-9",
+      "title": "Backlog file",
+      "status": "pending",
+      "dependsOn": ["task-8"],
+      "description": "Create plans/protocol-guardrails/backlog.md capturing all deferred items so nothing is lost.",
+      "filesToRead": [
+        "plans/protocol-guardrails/plan.md (Deferred to backlog section)"
+      ],
+      "acceptanceCriteria": [
+        "backlog.md lists: SessionStart injection, UserPromptSubmit approval nudge, .build/.planning read-only sentinel, statusline MAIN/worktree indicator, edit-guard ask→deny escalation, separate /fix skill, retrofit build-os itself (with the trade-off noted).",
+        "Each item has a one-line rationale / trigger for when to pull it off the backlog."
+      ]
+    }
+  ]
+}

@@ -106,6 +106,11 @@ Check for LEARNINGS.md in the file's directory, then one level up. If none exist
 
 ## Plan & PRD Standards
 
+### Prose formatting:
+- **Write each paragraph as a single line.** Do NOT hard-wrap prose at a column width (~80/100 chars). Plan/PRD viewers render a single newline as a line break, so manual wrapping shows up as ragged mid-sentence breaks. Let the renderer soft-wrap.
+- Blank lines still separate paragraphs and list items — only the wrapping *within* a paragraph is the problem.
+- List items and code blocks follow their normal rules; this applies to running prose.
+
 ### Acceptance Criteria must be:
 - **Testable** — can be verified with code or observation
 - **Specific** — not "works properly" but "returns 200 on success, 400 on invalid input"

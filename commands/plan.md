@@ -95,6 +95,8 @@ On approval → /approve → /ship {slug}
 
 The final line `On approval → /approve → /ship {slug}` is required — do not omit it.
 
+**Formatting:** Write each prose paragraph as a single line. Do NOT hard-wrap sentences at a column width — the plan viewer renders single newlines as line breaks, so manual wrapping produces ragged mid-sentence breaks. Blank lines separate paragraphs; let the renderer soft-wrap within them.
+
 ---
 
 ## Phase 3: Present and Wait
